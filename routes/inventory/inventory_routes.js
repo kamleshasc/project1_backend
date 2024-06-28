@@ -3,6 +3,7 @@ const Inventory = require("../../database/models/inventory");
 
 const router = express.Router();
 
+//Add new Inventory to the database
 router.post("/newInventory", async (req, res) => {
   try {
     const { name, quantity, unit, brand, price, stock, createdBy } = req.body;
@@ -37,6 +38,7 @@ router.post("/newInventory", async (req, res) => {
   }
 });
 
+//Get all Inventory data from database
 router.get("/getAllInventory", async (req, res) => {
   try {
     const getInventory = await Inventory.find()
@@ -50,13 +52,14 @@ router.get("/getAllInventory", async (req, res) => {
         firstName: 1,
         lastName: 1,
       });
-    return res.status(201).json(getInventory);
+    return res.status(200).json(getInventory);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Error " });
   }
 });
 
+//Update Inventory details
 router.put("/:id", async (req, res) => {
   try {
     const { name, quantity, unit, brand, price, stock, updatedBy } = req.body;
@@ -97,6 +100,21 @@ router.put("/:id", async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Error Updating Inventory." });
+  }
+});
+
+//Get Inventory by id
+router.get("/getInventoryById/:id", async (req, res) => {
+  try {
+    let inventoryId = req.params.id;
+    const result = await Inventory.findById(inventoryId);
+    if (!result) {
+      return res.status(404).json({ error: "Inventory not found." });
+    }
+    return res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 

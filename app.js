@@ -13,6 +13,7 @@ const newUserRouter = require("./routes/users/user_routes");
 const serviceRouter = require("./routes/services/service_routes");
 const clientRouter = require("./routes/clients/client_routes");
 const inventoryRouter = require("./routes/inventory/inventory_routes");
+const commissionRouter = require("./routes/commissionRules/commissionRule_routes");
 
 const dotenv = require("dotenv");
 dotenv.config();
@@ -39,6 +40,8 @@ app.use("/api/services", serviceRouter);
 app.use("/api/clients", clientRouter);
 //API endpoint for Inventory Module
 app.use("/api/inventory", inventoryRouter);
+//API endpoint for Commission Rule Module
+app.use("/api/commissionrules", commissionRouter);
 
 const PORT = process.env.PORT;
 
@@ -48,6 +51,11 @@ app.use((err, req, res, next) => {
 
   // Send a generic error response to the client
   res.status(500).json({ error: "Internal Server Error" });
+});
+
+//When no api match it will return
+app.use("*", async (req, res) => {
+  return res.status(404).json({ error: "Page Not Found." });
 });
 
 // Start the server

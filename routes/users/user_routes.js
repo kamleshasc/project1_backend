@@ -23,23 +23,22 @@ router.post("/newuser", async (req, res) => {
       userImage: req.body.userImage,
     });
     await newUser.save();
-    res.status(201).json(newUser);
+    return res.status(201).json(newUser);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err });
+    return res.status(500).json({ error: "Error saving user" });
   }
 });
 
 //get the user's data from the database
-router.get("/getuser", async (req, res, next) => {
+router.get("/getuser", async (req, res) => {
   try {
     const users = await User.find();
-    res.status(200).json(users);
+    return res.status(200).json(users);
   } catch (err) {
-    next(err);
     console.error(err);
     // logger.error("Error getting Users", err);
-    res.status(500).json({ error: err });
+    return res.status(500).json({ error: "Error getting users" });
   }
 });
 
@@ -58,10 +57,10 @@ router.put("/:id", async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
     //send updated user as a response
-    res.status(200).json(updateUser);
+    return res.status(200).json(updateUser);
   } catch (error) {
     console.error("Error updating user:", error);
-    res.status(500).json({ error: error });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -75,7 +74,22 @@ router.post("/uploadImg", upload.single("file"), async (req, res) => {
     }
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err });
+    return res.status(500).json({ error: err });
+  }
+});
+
+//route for get user details by id
+router.get("/getUserById/:id", async (req, res) => {
+  try {
+    let userId = req.params.id;
+    const result = await User.findById(userId);
+    if (!result) {
+      return res.status(404).json({ error: "user not found." });
+    }
+    return res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 module.exports = router;

@@ -3,6 +3,7 @@ const Client = require("../../database/models/clients");
 
 const router = express.Router();
 
+// Create new client
 router.post("/addClient", async (req, res) => {
   try {
     const {
@@ -55,6 +56,7 @@ router.post("/addClient", async (req, res) => {
   }
 });
 
+//Get new client from database
 router.get("/getClients", async (req, res) => {
   try {
     const clients = await Client.find().populate("owner", {
@@ -62,13 +64,14 @@ router.get("/getClients", async (req, res) => {
       firstName: 1,
       lastName: 1,
     });
-    res.status(200).json(clients);
+    return res.status(200).json(clients);
   } catch (error) {
     console.error(err);
     return res.status(500).json({ error: "Error Getting Client" });
   }
 });
 
+//Update client by id
 router.put("/:id", async (req, res) => {
   try {
     const {
@@ -115,4 +118,18 @@ router.put("/:id", async (req, res) => {
   }
 });
 
+//Get single client by id
+router.get("/getClientById/:id", async (req, res) => {
+  try {
+    let clientId = req.params.id;
+    const result = await Client.findById(clientId);
+    if (!result) {
+      return res.status(404).json({ error: "Client not found." });
+    }
+    return res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
 module.exports = router;

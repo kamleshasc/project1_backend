@@ -20,10 +20,10 @@ router.post("/newservice", async (req, res) => {
       createdBy: req.body.createdBy,
     });
     await newService.save();
-    res.status(201).json(newService);
+    return res.status(201).json(newService);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Error Adding New Service" });
+    return res.status(500).json({ error: "Error Adding New Service" });
   }
 });
 
@@ -35,14 +35,14 @@ router.get("/getAllservices", async (req, res) => {
     //   firstName: 1,
     //   lastName: 1,
     // });
-    res.status(201).json(getServices);
+    return res.status(201).json(getServices);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Error getting Services record" });
+    return res.status(500).json({ error: "Error getting Services record" });
   }
 });
 
-//to update the edited service
+//Update service by id
 router.put("/:id", async (req, res) => {
   const serviceId = req.params.id;
   const updatedData = req.body;
@@ -62,10 +62,12 @@ router.put("/:id", async (req, res) => {
         .status(404)
         .json({ error: "Service not found and so, can't updated" });
     }
-    res.status(201).json(updateService);
+    return res.status(201).json(updateService);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Error Updating the selected Service" });
+    return res
+      .status(500)
+      .json({ error: "Error Updating the selected Service" });
   }
 });
 
@@ -79,7 +81,22 @@ router.post("/serviceImg", upload.single("file"), async (req, res) => {
     }
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err });
+    return res.status(500).json({ error: err });
+  }
+});
+
+//Get service details by id
+router.get("/getServiceById/:id", async (req, res) => {
+  try {
+    let serviceId = req.params.id;
+    const result = await Services.findById(serviceId);
+    if (!result) {
+      return res.status(404).json({ error: "Service not found." });
+    }
+    return res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
