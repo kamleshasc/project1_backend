@@ -68,10 +68,16 @@ const invoiceSchema = new mongoose.Schema(
       trim: true,
       get: getCosts,
     },
-    tax: {
+    taxPercentage: {
       type: Number,
       required: true,
       trim: true,
+    },
+    taxValue: {
+      type: mongoose.Types.Decimal128,
+      required: true,
+      trim: true,
+      get: getCosts,
     },
     finalTotal: {
       type: mongoose.Types.Decimal128,

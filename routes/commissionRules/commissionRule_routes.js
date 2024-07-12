@@ -4,7 +4,7 @@ const CommissionRule = require("../../database/models/commissionRules");
 const router = express.Router();
 
 //Create new commission rule
-router.post("/addRule", async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const { name, criteria, value, applicableUser, createdBy } = req.body;
     if (!name || !criteria || !value || !applicableUser || !createdBy) {
@@ -29,7 +29,7 @@ router.post("/addRule", async (req, res) => {
 });
 
 //Get all commission rule from database
-router.get("/getRules", async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const getCommissionRules = await CommissionRule.find()
       .populate("applicableUser", {
@@ -89,7 +89,7 @@ router.put("/:id", async (req, res) => {
 });
 
 //Get commission by id
-router.get("/getCommissionById/:id", async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
     let commissionId = req.params.id;
     const result = await CommissionRule.findById(commissionId);

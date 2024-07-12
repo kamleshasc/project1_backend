@@ -4,7 +4,7 @@ const Inventory = require("../../database/models/inventory");
 const router = express.Router();
 
 //Add new Inventory to the database
-router.post("/newInventory", async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const { name, quantity, unit, brand, price, stock, createdBy } = req.body;
     if (
@@ -39,7 +39,7 @@ router.post("/newInventory", async (req, res) => {
 });
 
 //Get all Inventory data from database
-router.get("/getAllInventory", async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const getInventory = await Inventory.find()
       .populate("createdBy", {
@@ -104,7 +104,7 @@ router.put("/:id", async (req, res) => {
 });
 
 //Get Inventory by id
-router.get("/getInventoryById/:id", async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
     let inventoryId = req.params.id;
     const result = await Inventory.findById(inventoryId);

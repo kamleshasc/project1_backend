@@ -4,7 +4,7 @@ const Client = require("../../database/models/clients");
 const router = express.Router();
 
 // Create new client
-router.post("/addClient", async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const {
       firstName,
@@ -57,7 +57,7 @@ router.post("/addClient", async (req, res) => {
 });
 
 //Get new client from database
-router.get("/getClients", async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const clients = await Client.find().populate("owner", {
       _id: 1,
@@ -119,7 +119,7 @@ router.put("/:id", async (req, res) => {
 });
 
 //Get single client by id
-router.get("/getClientById/:id", async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
     let clientId = req.params.id;
     const result = await Client.findById(clientId);

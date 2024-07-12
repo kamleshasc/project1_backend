@@ -31,7 +31,8 @@ router.post("/", async (req, res) => {
       dateOfInvoice,
       invoiceNumber,
       total,
-      tax,
+      taxValue,
+      taxPercentage,
       finalTotal,
     } = req.body;
 
@@ -43,7 +44,8 @@ router.post("/", async (req, res) => {
       !dateOfInvoice ||
       !invoiceNumber ||
       !total ||
-      !tax ||
+      !taxValue ||
+      !taxPercentage ||
       !finalTotal
     ) {
       return res
@@ -59,7 +61,8 @@ router.post("/", async (req, res) => {
       dateOfInvoice,
       invoiceNumber,
       total,
-      tax,
+      taxValue,
+      taxPercentage,
       finalTotal,
     });
     const result = await invoice.save();
@@ -71,7 +74,7 @@ router.post("/", async (req, res) => {
 });
 
 //Get all invoices
-router.get("/", async (req, res) => {
+router.get("/", async (req, res, next) => {
   try {
     const result = await Invoice.find()
       .populate("client", { firstName: 1, lastName: 1 })
@@ -112,7 +115,8 @@ router.put("/:id", async (req, res) => {
       dateOfInvoice,
       invoiceNumber,
       total,
-      tax,
+      taxValue,
+      taxPercentage,
       finalTotal,
     } = req.body;
     if (
@@ -123,7 +127,8 @@ router.put("/:id", async (req, res) => {
       !dateOfInvoice ||
       !invoiceNumber ||
       !total ||
-      !tax ||
+      !taxValue ||
+      !taxPercentage ||
       !finalTotal
     ) {
       return res
@@ -166,7 +171,7 @@ router.get("/pdf/:id", async (req, res) => {
 
     generateInvoice(result, (pdfBuffer) => {
       res.setHeader("Content-Type", "application/json");
-      res.status(200).send({ pdfBase64: pdfBuffer.toString("base64") });
+      res.status(200).send(pdfBuffer.toString("base64"));
     });
   } catch (error) {
     console.log(error);
@@ -217,7 +222,8 @@ function generateInvoice(invoiceDetails, callback) {
     dateOfInvoice,
     invoiceNumber,
     total,
-    tax,
+    taxPercentage,
+    taxValue,
     finalTotal,
   } = invoiceDetails;
 
@@ -274,9 +280,9 @@ function generateInvoice(invoiceDetails, callback) {
           {
             text: `Name: ${client.prefix} ${client.firstName} ${
               client.lastName
-            }\nEmail: ${client.email}\nPhone: ${formatMobileNumber(
-              client.mobileNumber
-            )}`,
+            }\nPhone: ${formatMobileNumber(client.mobileNumber)}\nEmail: ${
+              client.email
+            }`,
             width: "50%",
             margin: [10, 0, 0, 10],
           },
@@ -286,7 +292,7 @@ function generateInvoice(invoiceDetails, callback) {
       {
         table: {
           headerRows: 1,
-          widths: ["auto", "*", "15%", "12%"],
+          widths: ["auto", "*", "15%", "15%"],
           body: [
             [
               { text: "No", style: "tableHeader", margin: [0, 4, 0, 4] },
@@ -313,7 +319,11 @@ function generateInvoice(invoiceDetails, callback) {
               { text: index + 1, alignment: "center" },
               { text: item.service },
               { text: item.duration, alignment: "center" },
-              { text: `$${item.price}`, alignment: "center" },
+              {
+                text: `$${item.price.toFixed(2)}`,
+                alignment: "right",
+                margin: [0, 0, 4, 0],
+              },
             ]),
           ],
         },
@@ -324,15 +334,19 @@ function generateInvoice(invoiceDetails, callback) {
           widths: ["*", "40%"],
           body: [
             [
-              { text: "Subtotal", bold: true, alignment: "left" },
+              { text: "Subtotal", alignment: "left", fontSize: 12 },
               { text: `$${total}`, alignment: "center" },
             ],
             [
-              { text: "Tax @6%", bold: true, alignment: "left" },
-              { text: `$${tax}`, alignment: "center" },
+              {
+                text: `Tax @${taxPercentage}%`,
+                alignment: "left",
+                fontSize: 12,
+              },
+              { text: `$${taxValue}`, alignment: "center" },
             ],
             [
-              { text: "Total", bold: true, alignment: "left" },
+              { text: "Total", bold: true, alignment: "left", fontSize: 13 },
               { text: `$${finalTotal}`, alignment: "center" },
             ],
           ],
