@@ -9,20 +9,18 @@ router.post("/newservice", async (req, res) => {
   try {
     const newService = new Services({
       serviceName: req.body.serviceName,
-      duration: req.body.duration,
       category: req.body.category,
-      price: req.body.price,
       onsiteOffsite: req.body.onsiteOffsite,
       status: req.body.status,
       selectedBranches: req.body.selectedBranches,
       selectedUsers: req.body.selectedUsers,
       serviceImage: req.body.serviceImage,
+      subService: req.body.subService,
       createdBy: req.body.createdBy,
     });
     await newService.save();
     return res.status(201).json(newService);
   } catch (err) {
-    console.error(err);
     return res.status(500).json({ error: "Error Adding New Service" });
   }
 });
@@ -30,14 +28,13 @@ router.post("/newservice", async (req, res) => {
 //get all services details from database
 router.get("/getAllservices", async (req, res) => {
   try {
-    const getServices = await Services.find();
-    // .populate("createdBy", {
-    //   firstName: 1,
-    //   lastName: 1,
-    // });
+    const getServices = await Services.find().populate("selectedUsers", {
+      _id: 1,
+      firstName: 1,
+      lastName: 1,
+    });
     return res.status(201).json(getServices);
   } catch (err) {
-    console.error(err);
     return res.status(500).json({ error: "Error getting Services record" });
   }
 });
@@ -64,7 +61,6 @@ router.put("/:id", async (req, res) => {
     }
     return res.status(201).json(updateService);
   } catch (err) {
-    console.error(err);
     return res
       .status(500)
       .json({ error: "Error Updating the selected Service" });
@@ -80,7 +76,6 @@ router.post("/serviceImg", upload.single("file"), async (req, res) => {
       return res.status(200).json({ fileName: null });
     }
   } catch (err) {
-    console.error(err);
     return res.status(500).json({ error: err });
   }
 });
@@ -95,7 +90,31 @@ router.get("/getServiceById/:id", async (req, res) => {
     }
     return res.status(200).json(result);
   } catch (error) {
-    console.log(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/subService", async (req, res) => {
+  try {
+    const result = await Services.find({}, { _id: 1, subService: 1 });
+    if (result && result.length > 0) {
+      let final = [];
+      for (let i = 0; i < result.length; i++) {
+        for (let j = 0; j < result[i].subService.length; j++) {
+          let body = {
+            parentId: result[i]._id,
+            name: result[i].subService[j].name,
+            id: result[i].subService[j].id,
+            duration: result[i].subService[j].duration,
+            price: result[i].subService[j].price,
+          };
+          final.push(body);
+        }
+      }
+      return res.status(200).json(final);
+    }
+    return res.status(200).json(result);
+  } catch (error) {
     return res.status(500).json({ error: "Internal server error" });
   }
 });

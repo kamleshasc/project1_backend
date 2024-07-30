@@ -4,7 +4,6 @@ const PdfPrinter = require("pdfmake");
 const path = require("path");
 const {
   DateFormateMMMMDDYYY,
-  formatMobileNumber,
 } = require("../../config/helper");
 
 const router = express.Router();
@@ -269,20 +268,12 @@ function generateInvoice(invoiceDetails, callback) {
       {
         columns: [
           {
-            text: `Name:  ${employee.firstName} ${
-              employee.lastName
-            }\n Branch: ${branch}\nPhone: ${formatMobileNumber(
-              employee.mobileNumber
-            )}\nEmail: ${employee.email}`,
+            text: `Name:  ${employee.firstName} ${employee.lastName}\n Branch: ${branch}\nPhone: ${employee.mobileNumber}\nEmail: ${employee.email}`,
             width: "50%",
             margin: [0, 0, 20, 10],
           },
           {
-            text: `Name: ${client.prefix} ${client.firstName} ${
-              client.lastName
-            }\nPhone: ${formatMobileNumber(client.mobileNumber)}\nEmail: ${
-              client.email
-            }`,
+            text: `Name: ${client.prefix} ${client.firstName} ${client.lastName}\nPhone: ${client.mobileNumber}\nEmail: ${client.email}`,
             width: "50%",
             margin: [10, 0, 0, 10],
           },
@@ -317,7 +308,7 @@ function generateInvoice(invoiceDetails, callback) {
             ],
             ...selectedService.map((item, index) => [
               { text: index + 1, alignment: "center" },
-              { text: item.service },
+              { text: item.name },
               { text: item.duration, alignment: "center" },
               {
                 text: `$${item.price.toFixed(2)}`,

@@ -1,48 +1,54 @@
 const mongoose = require("mongoose");
 
-const userSchema = new mongoose.Schema(
+const bookingSchema = new mongoose.Schema(
   {
-    firstName: {
+    date: {
+      type: Date,
+      required: true,
+      trim: true,
+    },
+    serviceId: {
+      type: mongoose.Schema.ObjectId,
+      required: true,
+      trim: true,
+    },
+    parentId: {
+      type: mongoose.Schema.ObjectId,
+      ref: "Service",
+      required: true,
+      trim: true,
+    },
+    name: {
       type: String,
       required: true,
       trim: true,
     },
-    lastName: {
+    mail: {
       type: String,
       required: true,
       trim: true,
     },
-    email: {
+    phone: {
       type: String,
       required: true,
       trim: true,
     },
-    title: {
+    startTime: {
       type: String,
       required: true,
       trim: true,
     },
-    role: {
+    endTime: {
       type: String,
       required: true,
       trim: true,
     },
-    dateOfjoining: {
+    serviceStartTime: {
       type: String,
       required: true,
       trim: true,
     },
-    status: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    mobileNumber: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    userImage: {
+    serviceEndTime: {
       type: String,
       required: true,
       trim: true,
@@ -51,4 +57,4 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model("Booking", bookingSchema);

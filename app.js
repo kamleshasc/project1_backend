@@ -15,6 +15,7 @@ const clientRouter = require("./routes/clients/client_routes");
 const inventoryRouter = require("./routes/inventory/inventory_routes");
 const commissionRouter = require("./routes/commissionRules/commissionRule_routes");
 const invoiceRouter = require("./routes/invoices/invoice_routes");
+const bookingRouter = require("./routes/bookings/booking_routes");
 
 const dotenv = require("dotenv");
 dotenv.config();
@@ -45,6 +46,8 @@ app.use("/api/inventory", inventoryRouter);
 app.use("/api/commissionrules", commissionRouter);
 //API endpoint for Invoice Module
 app.use("/api/invoices", invoiceRouter);
+//API endpoint for Booking Module
+app.use("/api/bookings", bookingRouter);
 
 const PORT = process.env.PORT;
 

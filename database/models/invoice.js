@@ -29,12 +29,7 @@ const invoiceSchema = new mongoose.Schema(
     selectedService: [
       {
         _id: false,
-        id: {
-          type: mongoose.Schema.ObjectId,
-          ref: "Services",
-          required: true,
-        },
-        service: {
+        name: {
           type: String,
           required: true,
           trim: true,

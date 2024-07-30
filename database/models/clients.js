@@ -13,8 +13,9 @@ const clientSchema = new mongoose.Schema(
       trim: true,
     },
     mobileNumber: {
-      type: Object,
+      type: String,
       required: true,
+      trim: true,
     },
     email: {
       type: String,
