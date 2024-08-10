@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
 
 const userSchema = new mongoose.Schema(
   {
@@ -16,39 +17,71 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      unique: true,
+      lowercase: true,
+    },
+    password: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    userType: {
+      type: String,
+      required: true,
+      enum: ["admin", "employee", "customer"],
+      default: "employee",
     },
     title: {
       type: String,
-      required: true,
       trim: true,
+      default: "",
     },
     role: {
       type: String,
-      required: true,
       trim: true,
+      default: "",
     },
     dateOfjoining: {
       type: String,
-      required: true,
       trim: true,
+      default: "",
     },
     status: {
       type: String,
-      required: true,
       trim: true,
+      default: "",
     },
     mobileNumber: {
       type: String,
-      required: true,
       trim: true,
+      default: "",
     },
     userImage: {
       type: String,
-      required: true,
       trim: true,
+      default: "",
+    },
+    isAdmin: {
+      type: Boolean,
+      default: false,
+    },
+    refreshToken: {
+      type: String,
+      default: "",
     },
   },
   { timestamps: true }
 );
+
+userSchema.pre("save", async function (next) {
+  try {
+    const salt = await bcrypt.genSalt(12);
+    const hashPassword = await bcrypt.hash(this.password, salt);
+    this.password = hashPassword;
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 module.exports = mongoose.model("User", userSchema);

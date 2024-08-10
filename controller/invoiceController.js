@@ -1,26 +1,22 @@
-const express = require("express");
-const Invoice = require("../../database/models/invoice");
+const Invoice = require("../models/invoice");
 const PdfPrinter = require("pdfmake");
 const path = require("path");
-const {
-  DateFormateMMMMDDYYY,
-} = require("../../config/helper");
-
-const router = express.Router();
+const { DateFormateMMMMDDYYY } = require("../utils/helper");
+const ApiError = require("../utils/ApiError");
+const ApiResponse = require("../utils/Apiresponse");
 
 const fonts = {
   Roboto: {
-    normal: path.join(__dirname, "../../fonts/Roboto-Regular.ttf"),
-    bold: path.join(__dirname, "../../fonts/Roboto-Medium.ttf"),
-    italics: path.join(__dirname, "../../fonts/Roboto-Italic.ttf"),
-    bolditalics: path.join(__dirname, "../../fonts/Roboto-MediumItalic.ttf"),
+    normal: path.join(__dirname, "../fonts/Roboto-Regular.ttf"),
+    bold: path.join(__dirname, "../fonts/Roboto-Medium.ttf"),
+    italics: path.join(__dirname, "../fonts/Roboto-Italic.ttf"),
+    bolditalics: path.join(__dirname, "../fonts/Roboto-MediumItalic.ttf"),
   },
 };
 
 const printer = new PdfPrinter(fonts);
 
-// Create new Invoice to database
-router.post("/", async (req, res) => {
+exports.createInvoice = async (req, res, next) => {
   try {
     let {
       client,
@@ -47,9 +43,10 @@ router.post("/", async (req, res) => {
       !taxPercentage ||
       !finalTotal
     ) {
-      return res
-        .status(401)
-        .json({ error: "Invoice all fields are required." });
+      // return res
+      //   .status(401)
+      //   .json({ error: "Invoice all fields are required." });
+      return next(new ApiError(401, "All fields are required."));
     }
 
     const invoice = new Invoice({
@@ -65,45 +62,32 @@ router.post("/", async (req, res) => {
       finalTotal,
     });
     const result = await invoice.save();
-    return res.status(201).json(result);
+    // return res.status(201).json(result);
+    let response = new ApiResponse(201, result);
+    return res.json(response);
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: "Error Adding Invoice." });
+    // console.log(error);
+    // return res.status(500).json({ error: "Error Adding Invoice." });
+    return next(new ApiError(500, error?.message || "Error Adding Invoice."));
   }
-});
+};
 
-//Get all invoices
-router.get("/", async (req, res, next) => {
+exports.getInvoice = async (req, res, next) => {
   try {
     const result = await Invoice.find()
       .populate("client", { firstName: 1, lastName: 1 })
       .populate("employee", { firstName: 1, lastName: 1 });
-    return res.status(200).json(result);
+    let response = new ApiResponse(200, result);
+    return res.json(response);
+    // return res.status(200).json(result);
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "Error getting invoice." });
+    // return res.status(500).json({ error: "Error getting invoice." });
+    return next(new ApiError(500, error?.message || "Error Getting Invoice."));
   }
-});
+};
 
-//Get invoice by id
-router.get("/:id", async (req, res) => {
-  try {
-    let invoiceId = req.params.id;
-    const result = await Invoice.findById(invoiceId)
-      .populate("client", { firstName: 1, lastName: 1 })
-      .populate("employee", { firstName: 1, lastName: 1 });
-
-    if (!result) {
-      return res.status(404).json({ error: "Invoice not found." });
-    }
-    return res.status(200).json(result);
-  } catch (error) {
-    return res.status(500).json({ error: "Error get invoice." });
-  }
-});
-
-//Update invoice by id
-router.put("/:id", async (req, res) => {
+exports.updateInvoice = async (req, res, next) => {
   try {
     let invoiceId = req.params.id;
     let {
@@ -130,24 +114,52 @@ router.put("/:id", async (req, res) => {
       !taxPercentage ||
       !finalTotal
     ) {
-      return res
-        .status(401)
-        .json({ error: "Invoice all fields are required." });
+      // return res
+      //   .status(401)
+      //   .json({ error: "Invoice all fields are required." });
+      return next(new ApiError(401, "Invoice all fields are required."));
     }
     const invoiceBody = req.body;
     const result = await Invoice.findByIdAndUpdate(invoiceId, invoiceBody);
     if (!result) {
-      return res.status(404).json({ error: "Invoice id not found." });
+      // return res.status(404).json({ error: "Invoice id not found." });
+      return next(new ApiError(404, "Invoice not found."));
     }
-    return res.status(202).json(result);
+    // return res.status(202).json(result);
+    let response = new ApiResponse(202, result);
+    return res.json(response);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ error: "Error Updating Invoice." });
+    // return res.status(500).json({ error: "Error Updating Invoice." });
+    return next(
+      new ApiError(500, error?.message || "Error Getting SubServices.")
+    );
   }
-});
+};
 
-//Get base64 pdf of invoice
-router.get("/pdf/:id", async (req, res) => {
+exports.getInvoiceById = async (req, res, next) => {
+  try {
+    let invoiceId = req.params.id;
+    const result = await Invoice.findById(invoiceId)
+      .populate("client", { firstName: 1, lastName: 1 })
+      .populate("employee", { firstName: 1, lastName: 1 });
+
+    if (!result) {
+      // return res.status(404).json({ error: "Invoice not found." });
+      return next(new ApiError(404, "Invoice not found."));
+    }
+    // return res.status(200).json(result);
+    let response = new ApiResponse(200, result);
+    return res.json(response);
+  } catch (error) {
+    // return res.status(500).json({ error: "Error get invoice." });
+    return next(
+      new ApiError(500, error?.message || "Error Getting SubServices.")
+    );
+  }
+};
+
+exports.getPdfById = async (req, res, next) => {
   try {
     const result = await Invoice.findById(req.params.id)
       .populate("client", {
@@ -165,21 +177,24 @@ router.get("/pdf/:id", async (req, res) => {
       });
 
     if (!result) {
-      return res.status(404).json({ error: "Service id not found." });
+      // return res.status(404).json({ error: "Service id not found." });
+      return next(new ApiError(404, "Service id not found."));
     }
 
     generateInvoice(result, (pdfBuffer) => {
       res.setHeader("Content-Type", "application/json");
-      res.status(200).send(pdfBuffer.toString("base64"));
+      // res.status(200).send(pdfBuffer.toString("base64"));
+      let response = new ApiResponse(200, pdfBuffer.toString("base64"));
+      return res.json(response);
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Error getting invoice" });
+    // res.status(500).json({ error: "Error getting invoice" });
+    return next(new ApiError(500, error?.message || "Error Getting invoice."));
   }
-});
+};
 
-//Get Pdf by invoice id
-router.get("/pdf/download/:id", async (req, res) => {
+exports.getPdfDownloadById = async (req, res, next) => {
   try {
     const result = await Invoice.findById(req.params.id)
       .populate("client", {
@@ -197,19 +212,25 @@ router.get("/pdf/download/:id", async (req, res) => {
       });
 
     if (!result) {
-      return res.status(404).json({ error: "Service id not found." });
+      // return res.status(404).json({ error: "Service id not found." });
+      return next(new ApiError(404, "Service id not found."));
     }
 
     generateInvoice(result, (pdfBuffer) => {
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", "attachment; filename=invoice.pdf");
       res.status(200).send(pdfBuffer);
+      // let response = new ApiResponse(200, pdfBuffer.toString("base64"));
+      // console.log(response, "====response====");
+
+      // return res.json(response);
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Error while downloading" });
+    // res.status(500).json({ error: "Error while downloading" });
+    return next(new ApiError(500, error?.message || "Error Downloading Pdf."));
   }
-});
+};
 
 //This function use for generate invoice pdf
 function generateInvoice(invoiceDetails, callback) {
@@ -366,5 +387,3 @@ function generateInvoice(invoiceDetails, callback) {
   pdfDoc.on("end", () => callback(Buffer.concat(chunks)));
   pdfDoc.end();
 }
-
-module.exports = router;

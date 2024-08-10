@@ -8,14 +8,7 @@ const cors = require("cors");
 const db = require("./database/db");
 // const logger = require('./utils/logger');
 const http = require("http");
-//Routes
-const newUserRouter = require("./routes/users/user_routes");
-const serviceRouter = require("./routes/services/service_routes");
-const clientRouter = require("./routes/clients/client_routes");
-const inventoryRouter = require("./routes/inventory/inventory_routes");
-const commissionRouter = require("./routes/commissionRules/commissionRule_routes");
-const invoiceRouter = require("./routes/invoices/invoice_routes");
-const bookingRouter = require("./routes/bookings/booking_routes");
+const ApiError = require("./utils/ApiError");
 
 const dotenv = require("dotenv");
 dotenv.config();
@@ -35,33 +28,23 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(cors());
 
 //API endpoint for Users Module
-app.use("/api/users", newUserRouter);
-//API endpoint for Services Module
-app.use("/api/services", serviceRouter);
-//API endpoint for Client Module
-app.use("/api/clients", clientRouter);
-//API endpoint for Inventory Module
-app.use("/api/inventory", inventoryRouter);
-//API endpoint for Commission Rule Module
-app.use("/api/commissionrules", commissionRouter);
-//API endpoint for Invoice Module
-app.use("/api/invoices", invoiceRouter);
-//API endpoint for Booking Module
-app.use("/api/bookings", bookingRouter);
+app.use("/api/v1", require("./api"));
 
 const PORT = process.env.PORT;
+
+//When no api match it will return
+app.use("*", async (req, res, next) => {
+  let err = new ApiError(404, "Page not found.");
+  next(err);
+  // next(createError.NotFound("Page not found!"));
+  // return res.status(404).json({ error: "Page Not Found." });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   // logger.error(err.stack);
-
   // Send a generic error response to the client
-  res.status(500).json({ error: "Internal Server Error" });
-});
-
-//When no api match it will return
-app.use("*", async (req, res) => {
-  return res.status(404).json({ error: "Page Not Found." });
+  res.status(err.statusCode).json({ message: err.message, ...err });
 });
 
 // Start the server
