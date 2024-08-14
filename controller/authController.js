@@ -14,9 +14,9 @@ exports.login = async (req, res, next) => {
     if (!email || !password) {
       return next(new ApiError(400, "All fields are required!"));
     }
-    const userFound = await User.findOne({ email });
+    const userFound = await User.findOne({ email, status: "Active" });
     if (!userFound) {
-      return next(new ApiError(401, "email or password is incorrect."));
+      return next(new ApiError(401, "User not found."));
     }
     const checkPassword = await bcrypt.compare(password, userFound.password);
     if (checkPassword) {

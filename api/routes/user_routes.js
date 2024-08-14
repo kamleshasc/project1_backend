@@ -25,6 +25,11 @@ router.post(
   userController.uploadUserProfile
 );
 
+router.get("/customer", userController.getCustomer);
 //route for get user details by id
 router.get("/:id", userController.getUserById);
+//route for create customer
+router.post("/customer", userController.createCustomer);
+router.put("/customer/:id", userController.updateCustomer);
+
 module.exports = router;

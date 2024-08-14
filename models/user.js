@@ -42,7 +42,7 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
     dateOfjoining: {
-      type: String,
+      type: Date,
       trim: true,
       default: "",
     },

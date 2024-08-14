@@ -24,6 +24,7 @@ const frontEndScreens = [
   "CommissionRules",
   "Invoices",
   "Bookings",
+  "Customers",
 ];
 
 const frontendScreenOptions = {
@@ -35,6 +36,7 @@ const frontendScreenOptions = {
   CommissionRules: frontEndScreens[5],
   Invoice: frontEndScreens[6],
   Bookings: frontEndScreens[7],
+  Customers: frontEndScreens[8],
   All: frontEndScreens,
 };
 
