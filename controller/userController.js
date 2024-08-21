@@ -16,12 +16,10 @@ exports.createAdmin = async (req, res, next) => {
   try {
     const { firstName, lastName, password, email } = req.body;
     if (!firstName || !lastName || !password || !email) {
-      // return res.status(400).json({ error: "All fields are required!" });
       return next(new ApiError(400, "All fields are required."));
     }
     const emailExists = await User.findOne({ email });
     if (emailExists) {
-      // return res.status(400).json({ error: "Email already exists." });
       return next(new ApiError(400, "Email already exists."));
     }
 
@@ -41,10 +39,7 @@ exports.createAdmin = async (req, res, next) => {
       return res.json(response);
     }
     return next(new ApiError(400, "Error while creating user."));
-    // return res.status(201).json(newAdmin);
   } catch (error) {
-    console.log(error, "error");
-    // return res.status(500).json({ error: "Error saving user" });
     return next(new ApiError(500, error?.message || "Error creating admin."));
   }
 };
@@ -129,15 +124,13 @@ exports.createUser = async (req, res, next) => {
   try {
     const emailExists = await User.findOne({ email: req.body.email });
     if (emailExists) {
-      // return res.status(400).json({ error: "Email already exists." });
       return next(new ApiError(400, "Email already exists."));
     }
     const newUser = new User(req.body);
-    await newUser.save(); ///sir, could you buy a aws account for api hosting
+    await newUser.save();
     if (newUser) {
       return res.json(new ApiResponse(201, newUser));
     }
-    // return res.status(201).json(newUser);
   } catch (err) {
     console.error(err);
     // return res.status(500).json({ error: "Error saving user" });
@@ -150,11 +143,9 @@ exports.getUser = async (req, res, next) => {
     const users = await User.find({ isAdmin: false, userType: "employee" });
     let response = new ApiResponse(200, users);
     return res.json(response);
-    // return res.status(200).json(users);
   } catch (err) {
     console.error(err);
     // logger.error("Error getting Users", err);
-    // return res.status(500).json({ error: "Error getting users" });
     return next(new ApiError(500, err?.message || "Error getting users"));
   }
 };
@@ -164,15 +155,11 @@ exports.getUserById = async (req, res, next) => {
     let userId = req.params.id;
     const result = await User.findById(userId);
     if (!result) {
-      // return res.status(404).json({ error: "user not found." });
       return next(new ApiError(404, "user not found."));
     }
     let response = new ApiResponse(200, result);
     return res.json(response);
-    // return res.status(200).json(result);
   } catch (error) {
-    console.log(error);
-    // return res.status(500).json({ error: "Internal server error" });
     return next(new ApiError(500, error?.message || "Error getting users"));
   }
 };
@@ -192,15 +179,12 @@ exports.updateUser = async (req, res, next) => {
     });
 
     if (!updateUser) {
-      // return res.status(404).json({ error: "User not found" });
       return next(new ApiError(404, "User not found."));
     }
     let response = new ApiResponse(200, updateUser);
     return res.json(response);
-    // return res.status(200).json(updateUser);
   } catch (error) {
     console.error("Error updating user:", error);
-    // return res.status(500).json({ error: err?.message || "Error updating user." });
     return next(new ApiError(500, error?.message || "Error updating users."));
   }
 };
