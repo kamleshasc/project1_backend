@@ -1,6 +1,15 @@
 const Services = require("../models/services");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/Apiresponse");
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const crypto = require("crypto");
+const s3 = new S3Client({
+  region: process.env.AWSREGION,
+  credentials: {
+    accessKeyId: process.env.AWSACCESSKEYID,
+    secretAccessKey: process.env.AWSSECRETKEY,
+  },
+});
 
 exports.createService = async (req, res, next) => {
   try {
@@ -77,22 +86,52 @@ exports.updateService = async (req, res, next) => {
   }
 };
 
+// exports.serviceImg = async (req, res, next) => {
+//   try {
+//     if (req.file && req.file.filename) {
+//       // return res.status(201).json({ fileName: req.file.filename });
+//       let response = new ApiResponse(200, req.file.filename);
+//       return res.json(response);
+//     } else {
+//       // return res.status(200).json({ fileName: null });
+//       let response = new ApiResponse(200, null);
+//       return res.json(response);
+//     }
+//   } catch (err) {
+//     // return res.status(500).json({ error: err });
+//     return next(
+//       new ApiError(500, err?.message || "Error uploading service image.")
+//     );
+//   }
+// };
+
 exports.serviceImg = async (req, res, next) => {
   try {
-    if (req.file && req.file.filename) {
-      // return res.status(201).json({ fileName: req.file.filename });
-      let response = new ApiResponse(200, req.file.filename);
+    if (req.file && req.file.buffer) {
+      const uniqueSuffix = `${Date.now()}-${crypto
+        .randomBytes(6)
+        .toString("hex")}`;
+      const extension = req.file.originalname.split(".").pop();
+      const fileName = `${uniqueSuffix}.${extension}`;
+
+      const params = {
+        Bucket: process.env.AWSBUCKETNAME,
+        Key: `images/${fileName}`,
+        Body: req.file.buffer,
+        ContentType: req.file.mimetype,
+      };
+
+      const command = new PutObjectCommand(params);
+      await s3.send(command);
+      let response = new ApiResponse(201, fileName);
       return res.json(response);
     } else {
-      // return res.status(200).json({ fileName: null });
       let response = new ApiResponse(200, null);
       return res.json(response);
     }
   } catch (err) {
-    // return res.status(500).json({ error: err });
-    return next(
-      new ApiError(500, err?.message || "Error uploading service image.")
-    );
+    console.error(err);
+    return next(new ApiError(500, err?.message || "Error uploading image."));
   }
 };
 

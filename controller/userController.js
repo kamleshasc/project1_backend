@@ -2,6 +2,15 @@ const User = require("../models/user");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/Apiresponse");
 const bcrypt = require("bcrypt");
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const crypto = require("crypto");
+const s3 = new S3Client({
+  region: process.env.AWSREGION,
+  credentials: {
+    accessKeyId: process.env.AWSACCESSKEYID,
+    secretAccessKey: process.env.AWSSECRETKEY,
+  },
+});
 
 exports.createAdmin = async (req, res, next) => {
   try {
@@ -196,20 +205,51 @@ exports.updateUser = async (req, res, next) => {
   }
 };
 
+// exports.uploadUserProfile = async (req, res, next) => {
+//   try {
+//     if (req.file && req.file.filename) {
+//       let response = new ApiResponse(201, req.file.filename);
+//       return res.json(response);
+//       // return res.status(201).json({ fileName: req.file.filename });
+//     } else {
+//       // return res.status(200).json({ fileName: null });
+//       let response = new ApiResponse(201, null);
+//       return res.json(response);
+//     }
+//   } catch (err) {
+//     console.error(err);
+//     // return res.status(500).json({ error: err });
+//     return next(new ApiError(500, err?.message || "Error uploading profile."));
+//   }
+// };
+
 exports.uploadUserProfile = async (req, res, next) => {
   try {
-    if (req.file && req.file.filename) {
-      let response = new ApiResponse(201, req.file.filename);
+    if (req.file && req.file.buffer) {
+      const uniqueSuffix = `${Date.now()}-${crypto
+        .randomBytes(6)
+        .toString("hex")}`;
+      const extension = req.file.originalname.split(".").pop();
+      const fileName = `${uniqueSuffix}.${extension}`;
+
+      const params = {
+        Bucket: process.env.AWSBUCKETNAME, // Replace with your bucket name
+        Key: `images/${fileName}`, // Folder and file name in S3
+        Body: req.file.buffer,
+        ContentType: req.file.mimetype,
+        // ACL: "public-read", // Adjust permissions as necessary
+      };
+
+      const command = new PutObjectCommand(params);
+      await s3.send(command);
+      let response = new ApiResponse(201, fileName);
       return res.json(response);
-      // return res.status(201).json({ fileName: req.file.filename });
     } else {
-      // return res.status(200).json({ fileName: null });
-      let response = new ApiResponse(201, null);
+      let response = new ApiResponse(200, null);
       return res.json(response);
     }
   } catch (err) {
     console.error(err);
-    // return res.status(500).json({ error: err });
     return next(new ApiError(500, err?.message || "Error uploading profile."));
   }
 };
