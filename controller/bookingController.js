@@ -1,6 +1,7 @@
 const Booking = require("../models/bookings");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/Apiresponse");
+const { getCurrentDateZone, getCurrentTimeZone } = require("../utils/helper");
 
 exports.createBooking = async (req, res, next) => {
   try {
@@ -18,12 +19,14 @@ exports.createBooking = async (req, res, next) => {
     const bookingDate = new Date(date);
     bookingDate.setUTCHours(0, 0, 0, 0);
 
-    const currentDate = new Date();
-    const currentTime = currentDate.toLocaleTimeString("en-US", {
-      hour12: false,
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const currentDate = getCurrentDateZone();
+    // const currentTime = currentDate.toLocaleTimeString("en-US", {
+    //   hour12: false,
+    //   hour: "2-digit",
+    //   minute: "2-digit",
+    // });
+
+    const currentTime = getCurrentTimeZone();
 
     const maxDate = new Date(currentDate);
     maxDate.setUTCDate(maxDate.getUTCDate() + 3);
@@ -48,7 +51,7 @@ exports.createBooking = async (req, res, next) => {
       //   .status(400)
       //   .json({ error: "Service time must be between 9:00 AM and 6:00 PM" });
       return next(
-        new ApiError(400, "Service time must be between 9:00 AM and 6:00 PM")
+        new ApiError(400, "Service time must be between 9:00 AM to 6:00 PM")
       );
     }
 

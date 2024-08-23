@@ -1,3 +1,5 @@
+const timeZone = "Asia/Kolkata";
+
 const DateFormateMMMMDDYYY = (value) => {
   const date = new Date(value);
   const month = date.toLocaleString("en-GB", { month: "long" });
@@ -47,6 +49,52 @@ const employeeScreen = [
 ];
 const customerScreen = [frontendScreenOptions.Dashboard];
 
+const getCurrentTimeZone = () => {
+  const options = {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: timeZone,
+  };
+
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat("en-US", options); // 'en-US' formats to HH:MM in 24-hour format
+  return formatter.format(now);
+};
+
+const getCurrentDateZone = () => {
+  const options = {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+    timeZone: timeZone,
+  };
+
+  const now = new Date();
+
+  // Format date and time according to the specified time zone
+  const formatter = new Intl.DateTimeFormat("en-CA", options);
+  const parts = formatter.formatToParts(now);
+
+  // Extract date and time parts
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+  const hour = parts.find((part) => part.type === "hour")?.value;
+  const minute = parts.find((part) => part.type === "minute")?.value;
+  const second = parts.find((part) => part.type === "second")?.value;
+
+  // Construct a date string in ISO format
+  const isoDateString = `${year}-${month}-${day}T${hour}:${minute}:${second}`;
+
+  // Return a new Date object, which will be in the local time zone of the environment
+  return new Date(isoDateString);
+};
+
 module.exports = {
   DateFormateMMMMDDYYY,
   formatMobileNumber,
@@ -55,4 +103,6 @@ module.exports = {
   adminScreen,
   employeeScreen,
   customerScreen,
+  getCurrentTimeZone,
+  getCurrentDateZone,
 };
