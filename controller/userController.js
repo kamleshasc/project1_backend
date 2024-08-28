@@ -58,6 +58,7 @@ exports.createCustomer = async (req, res, next) => {
 
     const newCustomer = new User({
       ...req.body,
+      status: "Active",
       userType: "customer",
     });
     await newCustomer.save();
