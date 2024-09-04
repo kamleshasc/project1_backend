@@ -2,9 +2,10 @@ const express = require("express");
 const bookingController = require("../../controller/bookingController");
 
 const router = express.Router();
+const verifyJWT = require("../../middleware/verifyJWT");
 
-router.post("/", bookingController.createBooking);
+router.post("/", verifyJWT, bookingController.createBooking);
 
-router.get("/:id/:date", bookingController.getBookingByIdAndDate);
+router.get("/:id/:date", verifyJWT, bookingController.getBookingByIdAndDate);
 
 module.exports = router;

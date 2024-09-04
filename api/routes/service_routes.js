@@ -1,25 +1,30 @@
 const express = require("express");
 const serviceController = require("../../controller/serviceController");
 const upload = require("../../middleware/upload");
+const verifyJWT = require("../../middleware/verifyJWT");
 
 const router = express.Router();
 
 //Add new service to database
-router.post("/", serviceController.createService);
+router.post("/", verifyJWT, serviceController.createService);
 
 //get all services details from database
-router.get("/", serviceController.getService);
+router.get("/", verifyJWT, serviceController.getService);
 
 //Update service by id
-router.put("/:id", serviceController.updateService);
+router.put("/:id", verifyJWT, serviceController.updateService);
 
 //route for service file upload
-router.post("/serviceImg", upload.single("file"), serviceController.serviceImg);
+router.post(
+  "/serviceImg",
+  verifyJWT,
+  upload.single("file"),
+  serviceController.serviceImg
+);
 
-router.get("/subService", serviceController.getSubService);
+router.get("/subService", verifyJWT, serviceController.getSubService);
 
 //Get service details by id
-router.get("/:id", serviceController.getServiceById);
-
+router.get("/:id", verifyJWT, serviceController.getServiceById);
 
 module.exports = router;
