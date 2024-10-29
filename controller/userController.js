@@ -11,6 +11,8 @@ const s3 = new S3Client({
     secretAccessKey: process.env.AWSSECRETKEY,
   },
 });
+const otpController = require("./otpController");
+const Helper = require("../utils/helper");
 
 exports.createAdmin = async (req, res, next) => {
   try {
@@ -46,9 +48,9 @@ exports.createAdmin = async (req, res, next) => {
 
 exports.createCustomer = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return next(new ApiError(400, "Email & Password is required."));
+    const { email, password, otp } = req.body;
+    if (!email || !password || !otp) {
+      return next(new ApiError(400, "All fields is required."));
     }
 
     const result = await User.findOne({ email });
@@ -56,11 +58,27 @@ exports.createCustomer = async (req, res, next) => {
       return next(new ApiError(400, "Email already found."));
     }
 
+    const verifyOTP = await otpController.verifyOTP(email, otp);
+
+    if (!verifyOTP.success) {
+      return next(new ApiError(400, verifyOTP.message));
+    }
+
     const newCustomer = new User({
       ...req.body,
       status: "Active",
       userType: "customer",
     });
+
+    try {
+      let fullName = req?.body?.firstName + " " + req?.body?.lastName || "";
+      const transporter = Helper.transporter();
+      const mailOptions = Helper.welcomeFormat(email, fullName);
+      await transporter.sendMail(mailOptions);
+    } catch (error) {
+      return next(new ApiError(400, "Error while creating user."));
+    }
+
     await newCustomer.save();
     if (newCustomer) {
       return res.json(new ApiResponse(201, newCustomer));
@@ -76,34 +94,20 @@ exports.createCustomer = async (req, res, next) => {
 exports.updateCustomer = async (req, res, next) => {
   try {
     let id = req.params.id;
-    let {
-      firstName,
-      lastName,
-      dateOfjoining,
-      status,
-      mobileNumber,
-      userImage,
-    } = req.body;
+    let { firstName, lastName, status, mobileNumber } = req.body;
 
-    if (
-      firstName &&
-      lastName &&
-      dateOfjoining &&
-      status &&
-      mobileNumber &&
-      userImage
-    ) {
+    if (firstName && lastName && status && mobileNumber) {
       const findCustomer = await User.findOne({ _id: id });
       if (!findCustomer) {
         return next(new ApiError(404, "Customer not found."));
       }
       const updatedResult = await User.findByIdAndUpdate(id, req.body, {
         new: true,
-      });
+      }).select("-password -refreshToken");
       return res.json(new ApiResponse(200, updatedResult));
     }
     return next(
-      new ApiError(400, "Other fields of customer can't be updated.")
+      new ApiError(400, "Fields are missing customer can't be updated.")
     );
   } catch (error) {
     return next(
@@ -112,7 +116,7 @@ exports.updateCustomer = async (req, res, next) => {
   }
 };
 
-exports.getCustomer = async (req, res, next) => {
+exports.getCustomer = async (_, res, next) => {
   try {
     const result = await User.find({ isAdmin: false, userType: "customer" });
     return res.json(new ApiResponse(200, result));
@@ -123,10 +127,21 @@ exports.getCustomer = async (req, res, next) => {
 
 exports.createUser = async (req, res, next) => {
   try {
+    const { email, otp, password } = req.body;
+    if (!email || !otp || !password) {
+      return next(new ApiError(400, "All fields are required."));
+    }
+
     const emailExists = await User.findOne({ email: req.body.email });
     if (emailExists) {
       return next(new ApiError(400, "Email already exists."));
     }
+
+    const verifyOTP = await otpController.verifyOTP(email, otp);
+    if (!verifyOTP.success) {
+      return next(new ApiError(400, verifyOTP.message));
+    }
+
     const newUser = new User(req.body);
     await newUser.save();
     if (newUser) {
@@ -135,11 +150,11 @@ exports.createUser = async (req, res, next) => {
   } catch (err) {
     console.error(err);
     // return res.status(500).json({ error: "Error saving user" });
-    return next(new ApiError(500, err?.message || "Error creating users."));
+    return next(new ApiError(500, err?.message || "Error creating Employee."));
   }
 };
 
-exports.getUser = async (req, res, next) => {
+exports.getUser = async (_, res, next) => {
   try {
     const users = await User.find({ isAdmin: false, userType: "employee" });
     let response = new ApiResponse(200, users);
@@ -177,7 +192,7 @@ exports.updateUser = async (req, res, next) => {
 
     const updateUser = await User.findByIdAndUpdate(userId, updateData, {
       new: true,
-    });
+    }).select("-password -refreshToken");
 
     if (!updateUser) {
       return next(new ApiError(404, "User not found."));

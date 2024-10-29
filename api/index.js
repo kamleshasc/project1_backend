@@ -9,6 +9,8 @@ const commissionRouter = require("./routes/commissionRule_routes");
 const invoiceRouter = require("./routes/invoice_routes");
 const bookingRouter = require("./routes/booking_routes");
 const authRouter = require("./routes/auth_routes");
+const privacyPolicyRouter = require("./routes/privacyPolicy_routes");
+const otpRouter = require("./routes/otp_routes");
 
 //API endpoint for Users Module
 apiRouter.use("/users", newUserRouter);
@@ -26,5 +28,9 @@ apiRouter.use("/invoices", invoiceRouter);
 apiRouter.use("/bookings", bookingRouter);
 //API endpoint for Booking Module
 apiRouter.use("/auth", authRouter);
+//API endpoint for Privacy Policy Module
+apiRouter.use("/privacyPolicy", privacyPolicyRouter);
+//API endpoint for OTP Module
+apiRouter.use("/otp", otpRouter);
 
 module.exports = apiRouter;

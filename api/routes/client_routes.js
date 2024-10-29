@@ -1,5 +1,6 @@
 const express = require("express");
 const clientController = require("../../controller/clientController");
+const upload = require("../../middleware/upload");
 
 const router = express.Router();
 const verifyJWT = require("../../middleware/verifyJWT");
@@ -15,4 +16,12 @@ router.put("/:id", verifyJWT, clientController.updateClient);
 
 //Get single client by id
 router.get("/:id", verifyJWT, clientController.getClientById);
+
+//route for client file upload
+router.post(
+  "/uploadImg",
+  upload.single("file"),
+  clientController.uploadClientProfile
+);
+
 module.exports = router;

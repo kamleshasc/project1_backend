@@ -24,7 +24,25 @@ router.post(
 
 router.get("/subService", verifyJWT, serviceController.getSubService);
 
+router.get(
+  "/getUserByCategory/:name",
+  verifyJWT,
+  serviceController.getUserByCategory
+);
 //Get service details by id
 router.get("/:id", verifyJWT, serviceController.getServiceById);
+router.get("/expert/all", verifyJWT, serviceController.getExpertService);
+router.get(
+  "/expert/:expertId",
+  verifyJWT,
+  serviceController.getSubServiceByExpert
+);
+router.get(
+  "/assignedService/:serviceId",
+  verifyJWT,
+  serviceController.getAssignedServiceEmployee
+);
+
+router.get("/country/getcountrybytime", serviceController.getCountryByTime);
 
 module.exports = router;

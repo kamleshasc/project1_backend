@@ -8,4 +8,14 @@ router.post("/", verifyJWT, bookingController.createBooking);
 
 router.get("/:id/:date", verifyJWT, bookingController.getBookingByIdAndDate);
 
+//user routes
+router.post("/user", verifyJWT, bookingController.createUserBooking);
+router.get("/expertStatus/:date/:expertId", verifyJWT, bookingController.getUserBookedExpertStatus);
+router.get(
+  "/:date/:expertId/:serviceId/",
+  verifyJWT,
+  bookingController.getUserBookedTimeSlot
+);
+router.get("/myBookings", verifyJWT, bookingController.getMyBookings);
+
 module.exports = router;

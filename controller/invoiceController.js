@@ -166,7 +166,6 @@ exports.getPdfById = async (req, res, next) => {
         firstName: 1,
         lastName: 1,
         email: 1,
-        prefix: 1,
         mobileNumber: 1,
       })
       .populate("employee", {
@@ -201,7 +200,6 @@ exports.getPdfDownloadById = async (req, res, next) => {
         firstName: 1,
         lastName: 1,
         email: 1,
-        prefix: 1,
         mobileNumber: 1,
       })
       .populate("employee", {
@@ -221,8 +219,6 @@ exports.getPdfDownloadById = async (req, res, next) => {
       res.setHeader("Content-Disposition", "attachment; filename=invoice.pdf");
       res.status(200).send(pdfBuffer);
       // let response = new ApiResponse(200, pdfBuffer.toString("base64"));
-      // console.log(response, "====response====");
-
       // return res.json(response);
     });
   } catch (error) {
@@ -294,7 +290,7 @@ function generateInvoice(invoiceDetails, callback) {
             margin: [0, 0, 20, 10],
           },
           {
-            text: `Name: ${client.prefix} ${client.firstName} ${client.lastName}\nPhone: ${client.mobileNumber}\nEmail: ${client.email}`,
+            text: `Name: ${client.firstName} ${client.lastName}\nPhone: ${client.mobileNumber}\nEmail: ${client.email}`,
             width: "50%",
             margin: [10, 0, 0, 10],
           },

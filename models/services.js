@@ -40,6 +40,7 @@ const serviceSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      enum: ["Facials", "Massages", "Therapies", "Special Occasions"],
     },
     onsiteOffsite: {
       type: String,

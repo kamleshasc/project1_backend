@@ -11,7 +11,7 @@ const invoiceSchema = new mongoose.Schema(
   {
     client: {
       type: String,
-      ref: "Client",
+      ref: "User",
       required: true,
       trim: true,
     },

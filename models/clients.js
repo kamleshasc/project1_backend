@@ -1,3 +1,4 @@
+const { trim } = require("lodash");
 const mongoose = require("mongoose");
 
 const clientSchema = new mongoose.Schema(
@@ -57,6 +58,11 @@ const clientSchema = new mongoose.Schema(
       type: mongoose.Schema.ObjectId,
       ref: "User",
       required: true,
+    },
+    clientImg: {
+      type: String,
+      trim: true,
+      default: "",
     },
   },
   { timestamps: true }

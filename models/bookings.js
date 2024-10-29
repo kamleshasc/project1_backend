@@ -30,8 +30,9 @@ const bookingSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
+      default: "",
     },
     startTime: {
       type: String,
@@ -52,6 +53,12 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+    },
+    expertId: {
+      type: String,
+      tim: true,
+      ref: "User",
+      default: null,
     },
   },
   { timestamps: true }

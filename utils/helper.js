@@ -1,4 +1,10 @@
+const nodemailer = require("nodemailer");
 const timeZone = "Asia/Kolkata";
+const emailTemplate = require("./HtmlTemplates");
+
+const SERVICE = process.env.EMAIL_SERVICE || "";
+const USER_EMAIL = process.env.EMAIL_USER || "";
+const PASS = process.env.EMAIL_PASS || "";
 
 const DateFormateMMMMDDYYY = (value) => {
   const date = new Date(value);
@@ -19,7 +25,7 @@ const formatMobileNumber = (mobileNumber) => {
 
 const frontEndScreens = [
   "Dashboard",
-  "Users",
+  "Employees",
   "Services",
   "Clients",
   "Inventory",
@@ -27,11 +33,13 @@ const frontEndScreens = [
   "Invoices",
   "Bookings",
   "Customers",
+  "Book",
+  "MyBooking",
 ];
 
 const frontendScreenOptions = {
   Dashboard: frontEndScreens[0],
-  Users: frontEndScreens[1],
+  Employees: frontEndScreens[1],
   Services: frontEndScreens[2],
   Clients: frontEndScreens[3],
   Inventory: frontEndScreens[4],
@@ -39,15 +47,21 @@ const frontendScreenOptions = {
   Invoice: frontEndScreens[6],
   Bookings: frontEndScreens[7],
   Customers: frontEndScreens[8],
+  Book: frontEndScreens[9],
+  MyBooking: frontEndScreens[10],
   All: frontEndScreens,
 };
 
 const adminScreen = frontendScreenOptions.All;
 const employeeScreen = [
-  frontendScreenOptions.Dashboard,
+  // frontendScreenOptions.Dashboard,
   frontendScreenOptions.Bookings,
 ];
-const customerScreen = [frontendScreenOptions.Dashboard];
+const customerScreen = [
+  frontendScreenOptions.Dashboard,
+  frontendScreenOptions.Book,
+  frontendScreenOptions.MyBooking,
+];
 
 const getCurrentTimeZone = () => {
   const options = {
@@ -95,6 +109,63 @@ const getCurrentDateZone = () => {
   return new Date(isoDateString);
 };
 
+//renerate OTP of 6 digits
+const generateOTP = () =>
+  Math.floor(100000 + Math.random() * 900000).toString();
+
+const transporter = () => {
+  return nodemailer.createTransport({
+    service: SERVICE,
+    auth: {
+      user: USER_EMAIL,
+      pass: PASS,
+    },
+  });
+};
+
+const signUpMailFormat = (email, otpValue) => {
+  return {
+    from: "ascsolutions.n@gmail.com",
+    to: email,
+    subject: "Your Signup OTP Code",
+    html: emailTemplate.signUpOTPTemplate(otpValue),
+    headers: {
+      "X-Priority": "1",
+      "X-MSMail-Priority": "High",
+      "X-Mailer": "Nodemailer",
+    },
+  };
+};
+
+const forgotMailFormat = (email, otpValue) => {
+  return {
+    from: USER_EMAIL,
+    to: email,
+    subject: "Your Forgot Password OTP Code",
+    // text: `Your OTP code is ${otpValue}. It will expire in 2 minutes.`,
+    html: emailTemplate.forgotOTPTemplate(otpValue),
+    headers: {
+      "X-Priority": "1",
+      "X-MSMail-Priority": "High",
+      "X-Mailer": "Nodemailer",
+    },
+  };
+};
+
+const welcomeFormat = (email, userName) => {
+  return {
+    from: "ascsolutions.n@gmail.com",
+    to: email,
+    subject: "Welcome to Spa App – Your Journey to Relaxation Begins!",
+    html: emailTemplate.welcomeTemplate(userName),
+    headers: {
+      "X-Priority": "1", // Sets email priority to high
+      "X-MSMail-Priority": "High", // MS-specific header for prioritizing the email
+      "X-Mailer": "Nodemailer", // Identifies the tool used to send the email
+    },
+  };
+};
+
 module.exports = {
   DateFormateMMMMDDYYY,
   formatMobileNumber,
@@ -105,4 +176,9 @@ module.exports = {
   customerScreen,
   getCurrentTimeZone,
   getCurrentDateZone,
+  generateOTP,
+  transporter,
+  signUpMailFormat,
+  forgotMailFormat,
+  welcomeFormat,
 };

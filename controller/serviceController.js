@@ -3,6 +3,9 @@ const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/Apiresponse");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const crypto = require("crypto");
+const ct = require("countries-and-timezones");
+const mongoose = require("mongoose");
+
 const s3 = new S3Client({
   region: process.env.AWSREGION,
   credentials: {
@@ -80,9 +83,7 @@ exports.updateService = async (req, res, next) => {
     // return res
     //   .status(500)
     //   .json({ error: "Error Updating the selected Service" });
-    return next(
-      new ApiError(500, err?.message || "Error updating sevice.")
-    );
+    return next(new ApiError(500, err?.message || "Error updating sevice."));
   }
 };
 
@@ -182,6 +183,191 @@ exports.getSubService = async (req, res, next) => {
     // return res.status(500).json({ error: "Internal server error" });
     return next(
       new ApiError(500, error?.message || "Error Getting SubServices.")
+    );
+  }
+};
+
+exports.getSubServiceByExpert = async (req, res, next) => {
+  try {
+    const { expertId } = req.params;
+    const result = await Services.find({ selectedUsers: expertId });
+    if (result && result.length > 0) {
+      let expertService = [];
+      for (let i = 0; i < result.length; i++) {
+        for (let j = 0; j < result[i].subService.length; j++) {
+          let payload = {
+            parentId: result[i].id,
+            serviceId: result[i].subService[j].id,
+            name: result[i].subService[j].name,
+            price: result[i].subService[j].price,
+            duration: result[i].subService[j].duration,
+          };
+          expertService.push(payload);
+        }
+      }
+      return res.json(new ApiResponse(200, expertService));
+    }
+    return res.json(new ApiResponse(200, result));
+  } catch (error) {
+    return next(new ApiError(500, error?.message || "Error Fetching Service."));
+  }
+};
+
+exports.getExpertService = async (req, res, next) => {
+  try {
+    const services = await Services.aggregate([
+      // Unwind the selectedUsers array to handle each user separately
+      { $unwind: "$selectedUsers" },
+
+      {
+        $addFields: {
+          selectedUsers: {
+            $convert: {
+              input: "$selectedUsers",
+              to: "objectId",
+              onError: "$selectedUsers", // In case it's already an ObjectId
+              onNull: "$selectedUsers",
+            },
+          },
+        },
+      },
+
+      // Lookup the corresponding user details from the User collection
+      {
+        $lookup: {
+          from: "users", // MongoDB collection name (it's usually pluralized)
+          localField: "selectedUsers",
+          foreignField: "_id",
+          as: "userDetails",
+        },
+      },
+
+      // Unwind the userDetails array (each user will have their details in userDetails)
+      { $unwind: "$userDetails" },
+
+      // Filter users where the status is Active
+      {
+        $match: {
+          "userDetails.status": "Active",
+          "userDetails.isAdmin": false,
+        },
+      },
+
+      // Group by user id to remove duplicates
+      {
+        $group: {
+          _id: "$userDetails._id", // Group by user ID to eliminate duplicates
+          firstName: { $first: "$userDetails.firstName" },
+          lastName: { $first: "$userDetails.lastName" },
+          email: { $first: "$userDetails.email" },
+          status: { $first: "$userDetails.status" },
+          userImage: { $first: "$userDetails.userImage" },
+        },
+      },
+    ]);
+
+    return res.json(new ApiResponse(200, services));
+  } catch (error) {
+    return next(new ApiError(500, error?.message || "Error Fetching Expert."));
+  }
+};
+
+exports.getUserByCategory = async (req, res, next) => {
+  try {
+    let { name } = req.params;
+    const result = await Services.aggregate([
+      {
+        $match: { category: name },
+      },
+      {
+        $unwind: "$selectedUsers",
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "selectedUsers",
+          foreignField: "_id",
+          as: "userDetails",
+        },
+      },
+      {
+        $unwind: "$userDetails",
+      },
+      {
+        $group: {
+          _id: "$userDetails._id",
+          firstName: { $first: "$userDetails.firstName" },
+          lastName: { $first: "$userDetails.lastName" },
+          email: { $first: "$userDetails.email" },
+          categories: { $first: "$category" },
+          userImage: { $first: "$userDetails.userImage" },
+        },
+      },
+    ]);
+
+    return res.json(new ApiResponse(200, result));
+  } catch (error) {
+    return next(
+      new ApiError(500, error?.message || "Error Fetching Category By User.")
+    );
+  }
+};
+
+exports.getCountryByTime = async (req, res, next) => {
+  try {
+    const result = ct.getAllCountries();
+
+    return res.json(new ApiResponse(200, result));
+  } catch (error) {
+    return next(
+      new ApiError(500, error?.message || "Error Getting Country List.")
+    );
+  }
+};
+
+exports.getAssignedServiceEmployee = async (req, res, next) => {
+  try {
+    const { serviceId } = req.params;
+    
+    const serviceDetails = await Services.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(serviceId),
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "selectedUsers",
+          foreignField: "_id",
+          as: "userDetails",
+        },
+      },
+      {
+        $unwind: "$userDetails",
+      },
+      {
+        $match: {
+          "userDetails.status": "Active",
+          "userDetails.isAdmin": false,
+        },
+      },
+      {
+        $project: {
+          _id: "$userDetails._id",
+          firstName: "$userDetails.firstName",
+          lastName: "$userDetails.lastName",
+        },
+      },
+    ]);
+
+    return res.json(new ApiResponse(200, serviceDetails));
+  } catch (error) {
+    next(
+      new ApiError(
+        500,
+        error?.message || "Error Getting Assigned Service Employee."
+      )
     );
   }
 };

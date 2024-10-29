@@ -1,6 +1,15 @@
 const Client = require("../models/clients");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/Apiresponse");
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const crypto = require("crypto");
+const s3 = new S3Client({
+  region: process.env.AWSREGION,
+  credentials: {
+    accessKeyId: process.env.AWSACCESSKEYID,
+    secretAccessKey: process.env.AWSSECRETKEY,
+  },
+});
 
 exports.createClient = async (req, res, next) => {
   try {
@@ -16,6 +25,7 @@ exports.createClient = async (req, res, next) => {
       city,
       prefix,
       owner,
+      clientImg
     } = req.body;
     if (
       !firstName ||
@@ -46,6 +56,7 @@ exports.createClient = async (req, res, next) => {
       city,
       prefix,
       owner,
+      clientImg
     });
     await newClient.save();
     let response = new ApiResponse(201, newClient);
@@ -139,5 +150,35 @@ exports.getClientById = async (req, res, next) => {
     console.log(error);
     // return res.status(500).json({ error: "Internal server error" });
     return next(new ApiError(500, error?.message || "Error getting client."));
+  }
+};
+
+exports.uploadClientProfile = async (req, res, next) => {
+  try {
+    if (req.file && req.file.buffer) {
+      const uniqueSuffix = `${Date.now()}-${crypto
+        .randomBytes(6)
+        .toString("hex")}`;
+      const extension = req.file.originalname.split(".").pop();
+      const fileName = `${uniqueSuffix}.${extension}`;
+
+      const params = {
+        Bucket: process.env.AWSBUCKETNAME,
+        Key: `images/${fileName}`,
+        Body: req.file.buffer,
+        ContentType: req.file.mimetype,
+      };
+
+      const command = new PutObjectCommand(params);
+      await s3.send(command);
+      let response = new ApiResponse(201, fileName);
+      return res.json(response);
+    } else {
+      let response = new ApiResponse(200, null);
+      return res.json(response);
+    }
+  } catch (err) {
+    console.error(err);
+    return next(new ApiError(500, err?.message || "Error uploading image."));
   }
 };
