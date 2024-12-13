@@ -1,5 +1,6 @@
 const nodemailer = require("nodemailer");
-const timeZone = "Asia/Kolkata";
+// const timeZone = "Asia/Kolkata";
+const timeZone = "America/New_York"
 const emailTemplate = require("./HtmlTemplates");
 
 const SERVICE = process.env.EMAIL_SERVICE || "";
