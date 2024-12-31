@@ -32,10 +32,6 @@ app.use("/api/v1", require("./api"));
 
 const PORT = process.env.PORT;
 
-app.use("/", (req, res, next) => {
-  res.status(200).send("Hello World!");
-});
-
 //When no api match it will return
 app.use("*", async (req, res, next) => {
   let err = new ApiError(404, "Page not found.");
