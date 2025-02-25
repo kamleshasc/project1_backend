@@ -2,7 +2,14 @@ const Booking = require("../models/bookings");
 const Service = require("../models/services");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/Apiresponse");
-const { getCurrentDateZone, getCurrentTimeZone } = require("../utils/helper");
+const {
+  getDateInNewYorkTimeZoneMoment,
+  getTimeInNewYork,
+  isPastDate,
+} = require("../utils/helper");
+const moment = require("moment-timezone");
+// const mongoose = require('mongoose');
+const { ObjectId } = require('mongodb');
 
 exports.createBooking = async (req, res, next) => {
   try {
@@ -21,17 +28,17 @@ exports.createBooking = async (req, res, next) => {
     const bookingDate = new Date(date);
     bookingDate.setUTCHours(0, 0, 0, 0);
 
-    const currentDate = getCurrentDateZone();
+    const currentDate = getDateInNewYorkTimeZoneMoment();
     // const currentTime = currentDate.toLocaleTimeString("en-US", {
     //   hour12: false,
     //   hour: "2-digit",
     //   minute: "2-digit",
     // });
 
-    const currentTime = getCurrentTimeZone();
+    const currentTime = getTimeInNewYork();
 
     const maxDate = new Date(currentDate);
-    maxDate.setUTCDate(maxDate.getUTCDate() + 3);
+    maxDate.setUTCDate(maxDate.getUTCDate() + 15);
 
     if (
       bookingDate < currentDate.setUTCHours(0, 0, 0, 0) ||
@@ -41,7 +48,7 @@ exports.createBooking = async (req, res, next) => {
       //   .status(400)
       //   .json({ error: "Booking date must be within the next 3 days" });
       return next(
-        new ApiError(400, "Booking date must be within the next 3 days")
+        new ApiError(400, "Booking date must be within the next 15 days")
       );
     }
 
@@ -70,7 +77,7 @@ exports.createBooking = async (req, res, next) => {
 
     const overlappingBookings = await Booking.find({
       date: bookingDate,
-      serviceId: serviceId,
+      // serviceId: serviceId,
       expertId: expertId,
       $or: [
         {
@@ -102,7 +109,7 @@ exports.createBooking = async (req, res, next) => {
       endTime: "18:00",
       serviceStartTime,
       serviceEndTime,
-      expertId
+      expertId,
     });
 
     await newBooking.save();
@@ -122,25 +129,67 @@ exports.createBooking = async (req, res, next) => {
   }
 };
 
-function getBookingResult(resData) {
-  const bookingData = resData.map((value) => {
-    return {
-      _id: value?._id,
-      date: value?.date,
-      serviceId: value?.serviceId,
-      parentId: value?.parentId,
-      name: value?.name,
-      mail: value?.mail,
-      phone: value?.phone,
-      startTime: value?.startTime,
-      endTime: value?.endTime,
-      serviceStartTime: value?.serviceStartTime,
-      serviceEndTime: value?.serviceEndTime,
-      expertId: value?.expertId._id,
-      expertName: value?.expertId.firstName + " " + value?.expertId.lastName,
-    };
-  });
-  return bookingData;
+async function getBookingResult(resData) {
+  try {
+    let final = [];
+
+    const userIds = resData
+      .filter((item) => item?.userId)
+      .map((item) => item?.userId);
+    const allResults = await Booking.find({ userId: { $in: userIds } });
+
+    const resultsMap = allResults.reduce((acc, booking) => {
+      acc[booking.userId] = acc[booking.userId] || [];
+      acc[booking.userId].push(booking);
+      return acc;
+    }, {});
+
+    for (const value of resData) {
+      let body = { ...value?._doc };
+
+      if (!value?.userId && value?.parentId?.category === "Facials") {
+        body.itemColour = 0;
+      } else if (!value?.userId) {
+        body.itemColour = 2;
+      } else if (value?.userId) {
+        const result = resultsMap[value?.userId] || [];
+
+        if (value?.parentId?.category === "Facials") {
+          body.itemColour = result?.length > 1 ? 1 : 0;
+        } else {
+          body.itemColour = result?.length > 1 ? 3 : 2;
+        }
+      }
+
+      final.push(body);
+    }
+
+    const bookingData = final.map((value) => {
+      return {
+        _id: value?._id,
+        date: value?.date,
+        serviceId: value?.serviceId,
+        parentId: value?.parentId?._id,
+        name: value?.name,
+        mail: value?.mail,
+        phone: value?.phone,
+        startTime: value?.startTime,
+        endTime: value?.endTime,
+        serviceStartTime: value?.serviceStartTime,
+        serviceEndTime: value?.serviceEndTime,
+        expertId: value?.expertId?._id,
+        expertName:
+          value?.expertId?.firstName + " " + value?.expertId?.lastName,
+        isDeleted: value?.isDeleted,
+        itemColour: value?.itemColour,
+        userId: value?.userId,
+      };
+    });
+
+    return bookingData;
+  } catch (error) {
+    throw new ApiError(400, error?.message);
+  }
 }
 
 exports.getBookingByIdAndDate = async (req, res, next) => {
@@ -151,23 +200,40 @@ exports.getBookingByIdAndDate = async (req, res, next) => {
 
     const bookingDate = new Date(date);
     bookingDate.setUTCHours(0, 0, 0, 0);
+
     if (userLogin?.userType === "admin") {
-      const bookingAdmin = await Booking.find({ serviceId, date: bookingDate })
+      let adminFilterQuery = {
+        date: bookingDate,
+      };
+
+      if (serviceId != "all") {
+        adminFilterQuery.serviceId = serviceId;
+      }
+
+      const bookingAdmin = await Booking.find(adminFilterQuery)
         .sort(
           {
             serviceStartTime: 1,
           },
           { "expertId._id": 1 }
         )
-        .populate("expertId");
-      let bookingData = getBookingResult(bookingAdmin);
+        .populate("expertId")
+        .populate("parentId");
+
+      const bookingData = await getBookingResult(bookingAdmin);
+
       return res.json(new ApiResponse(200, bookingData));
     } else if (userLogin?.userType === "employee") {
-      const bookingEmployee = await Booking.find({
-        serviceId,
+      let employeeFilterQuery = {
         date: bookingDate,
-        expertId: userLogin?._id,
-      })
+        expertId: userLogin._id,
+      };
+
+      if (serviceId != "all") {
+        employeeFilterQuery.serviceId = serviceId;
+      }
+
+      const bookingEmployee = await Booking.find(employeeFilterQuery)
         .sort(
           {
             serviceStartTime: 1,
@@ -175,7 +241,9 @@ exports.getBookingByIdAndDate = async (req, res, next) => {
           { "expertId._id": 1 }
         )
         .populate("expertId");
-      let bookingData = getBookingResult(bookingEmployee);
+
+      const bookingData = await getBookingResult(bookingEmployee);
+
       return res.json(new ApiResponse(200, bookingData));
     } else {
       return next(new ApiError(400, "Unauthorized"));
@@ -195,6 +263,8 @@ exports.getBookingByIdAndDate = async (req, res, next) => {
 
 exports.createUserBooking = async (req, res, next) => {
   try {
+    const userId = req?.user?._id || null;
+
     const {
       date,
       serviceId,
@@ -223,8 +293,9 @@ exports.createUserBooking = async (req, res, next) => {
     const bookingDate = new Date(date);
     bookingDate.setUTCHours(0, 0, 0, 0);
 
-    const currentDate = getCurrentDateZone();
-    const currentTime = getCurrentTimeZone();
+    const currentDate = getDateInNewYorkTimeZoneMoment();
+
+    const currentTime = getTimeInNewYork();
 
     const maxDate = new Date(currentDate);
     maxDate.setUTCDate(maxDate.getUTCDate() + 15);
@@ -287,6 +358,7 @@ exports.createUserBooking = async (req, res, next) => {
       serviceStartTime,
       serviceEndTime,
       expertId,
+      userId: userId,
     });
 
     await newBooking.save();
@@ -371,7 +443,7 @@ exports.getUserBookedExpertStatus = async (req, res, next) => {
         // Match bookings by date and expertId
         $match: {
           date: paramsDate,
-          expertId: expertId,
+          expertId: new ObjectId(expertId), // Convert expertId,
         },
       },
       {
@@ -415,7 +487,7 @@ exports.getUserBookedExpertStatus = async (req, res, next) => {
         },
       },
     ]);
-
+    
     // Check if any results found and return the appropriate response
     if (result.length > 0) {
       return res.json(new ApiResponse(200, result));
@@ -506,6 +578,7 @@ exports.getMyBookings = async (req, res, next) => {
           serviceStartTime: 1,
           serviceEndTime: 1,
           service: "$serviceDetails.subService.name",
+          isDeleted: 1,
           expertName: {
             $concat: [
               { $ifNull: ["$expertDetails.firstName", ""] },
@@ -527,6 +600,72 @@ exports.getMyBookings = async (req, res, next) => {
       new ApiError(
         500,
         error?.message || "An error occurred while fetching my bookings."
+      )
+    );
+  }
+};
+
+exports.deleteBookings = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const user_id = req.user._id;
+
+    if (!user_id) {
+      return next(new Error(400, "Unauthorized"));
+    }
+
+    const booking = await Booking.findById({ _id: id });
+
+    if (!booking) {
+      return next(new ApiError(404, "Booking not found."));
+    }
+
+    if (booking.isDeleted) {
+      return next(new ApiError(400, "Booking is already cancelled."));
+    }
+
+    const pastDate = isPastDate(booking.date);
+
+    if (pastDate) {
+      return next(
+        new ApiError(400, "Cannot cancel a booking for a past date.")
+      );
+    }
+
+    const nowTime = moment().tz("America/New_York");
+    const formattedDate = moment(booking.date).isValid()
+      ? moment(booking.date).format("YYYY-MM-DD")
+      : "Invalid date";
+
+    const serviceStartTime = moment.tz(
+      `${formattedDate}T${booking.serviceStartTime}:00`,
+      "America/New_York"
+    );
+    const serviceEndTime = moment.tz(
+      `${formattedDate}T${booking.serviceEndTime}:00`,
+      "America/New_York"
+    );
+
+    if (nowTime.isAfter(serviceStartTime) && nowTime.isBefore(serviceEndTime)) {
+      return next(
+        new ApiError(
+          400,
+          "Cannot cancel a booking once the booked time slot has started."
+        )
+      );
+    }
+
+    booking.isDeleted = true;
+    booking.deleteBy = req.user ? req.user._id : null;
+
+    await booking.save();
+
+    return next(new ApiResponse(200, "Booking deleted successfully."));
+  } catch (error) {
+    return next(
+      new ApiError(
+        500,
+        error?.message || "An error occurred while deleting booking."
       )
     );
   }

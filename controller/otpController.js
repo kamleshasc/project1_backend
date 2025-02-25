@@ -19,6 +19,7 @@ exports.signUpOTP = async (req, res, next) => {
 
     const otpValue = Helper.generateOTP();
     const currentTime = Helper.getCurrentDateZone();
+    // const currentTime = Helper.getDateInNewYorkTimeZoneMoment();
     const expirationTimeUTC = new Date(Date.now() + 2 * 60 * 1000);
 
     let otpRecord = await OTP.findOne({ email });
@@ -76,7 +77,7 @@ exports.forgotOTP = async (req, res, next) => {
     }
 
     const otpValue = Helper.generateOTP();
-    const currentTime = Helper.getCurrentDateZone();
+    const currentTime = Helper.getDateInNewYorkTimeZoneMoment();
     const expirationTimeUTC = new Date(Date.now() + 2 * 60 * 1000);
 
     let otpRecord = await OTP.findOne({ email });

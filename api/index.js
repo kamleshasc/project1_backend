@@ -11,6 +11,8 @@ const bookingRouter = require("./routes/booking_routes");
 const authRouter = require("./routes/auth_routes");
 const privacyPolicyRouter = require("./routes/privacyPolicy_routes");
 const otpRouter = require("./routes/otp_routes");
+const paymentRouter = require("./routes/payment_routes")
+const reportRouter = require("./routes/report_routes");
 
 //API endpoint for Users Module
 apiRouter.use("/users", newUserRouter);
@@ -32,5 +34,10 @@ apiRouter.use("/auth", authRouter);
 apiRouter.use("/privacyPolicy", privacyPolicyRouter);
 //API endpoint for OTP Module
 apiRouter.use("/otp", otpRouter);
+//API endpoint for Payment Module
+apiRouter.use("/payment", paymentRouter);
+//API endpoint for Report Module
+apiRouter.use("/report", reportRouter);
+
 
 module.exports = apiRouter;

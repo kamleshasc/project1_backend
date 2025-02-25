@@ -33,7 +33,7 @@ const welcomeTemplate = (userName) => {
 <body>
   <div class="container">
     <h1>Welcome, ${userName}!</h1>
-    <p>Thank you for joining Spa application! We are dedicated to offering you the best in wellness and relaxation services. Take a break from your busy life and let us help you find balance and tranquility.</p>
+    <p>Thank you for joining The Bone Mechanics! We are dedicated to offering you the best in wellness and relaxation services. Take a break from your busy life and let us help you find balance and tranquility.</p>
     <p>Best regards,</p>
     <p>The Spa Team</p>
   </div>
@@ -87,7 +87,7 @@ const forgotOTPTemplate = (otpValue) => {
           <p>This OTP is valid for 2 minutes. If you didn't request this, please ignore this email.</p>
           <p>Thank you!</p>
           <div class="footer">
-            <p>Best regards,<br>The Spa Team</p>
+            <p>Best regards,<br>The Bone Mechanics Team</p>
           </div>
         </div>
       </body>
@@ -139,16 +139,16 @@ const signUpOTPTemplate = (otpValue) => {
       </head>
       <body>
         <div class="container">
-          <h2 class="header">Welcome to Spa App</h2>
+          <h2 class="header">Welcome to The Bone Mechanics</h2>
           <div class="content">
             <p>Hello,</p>
-            <p>Thank you for signing up with Spa App! To complete your registration, please use the following One-Time Password (OTP):</p>
+            <p>Thank you for signing up with The Bone Mechanics! To complete your registration, please use the following One-Time Password (OTP):</p>
             <p class="otp-code">${otpValue}</p>
             <p>This OTP is valid for 2 minutes. If you didn’t sign up for this account, you can safely ignore this email.</p>
             <p>We look forward to having you with us.</p>
           </div>
           <div class="footer">
-            <p>Best regards,<br>The Spa Team</p>
+            <p>Best regards,<br>The Bone Mechanics Team</p>
           </div>
         </div>
       </body>

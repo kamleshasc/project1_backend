@@ -28,7 +28,7 @@ exports.createService = async (req, res, next) => {
       createdBy: req.body.createdBy,
     });
     await newService.save();
-    // return res.status(201).json(newService);
+    // return res.status(201).json(newService);   
     let response = new ApiResponse(201, newService);
     return res.json(response);
   } catch (err) {

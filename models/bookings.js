@@ -14,7 +14,7 @@ const bookingSchema = new mongoose.Schema(
     },
     parentId: {
       type: mongoose.Schema.ObjectId,
-      ref: "Service",
+      ref: "Services",
       required: true,
       trim: true,
     },
@@ -55,8 +55,26 @@ const bookingSchema = new mongoose.Schema(
       trim: true,
     },
     expertId: {
-      type: String,
+      type: mongoose.Schema.ObjectId,
       tim: true,
+      ref: "User",
+      default: null,
+    },
+    userId: {
+      type: mongoose.Schema.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    isPaymentDone: {
+      type: Boolean,
+      default: false,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deleteBy: {
+      type: mongoose.Schema.ObjectId,
       ref: "User",
       default: null,
     },

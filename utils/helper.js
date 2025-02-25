@@ -1,7 +1,8 @@
 const nodemailer = require("nodemailer");
 // const timeZone = "Asia/Kolkata";
-const timeZone = "America/New_York"
+const timeZone = "America/New_York";
 const emailTemplate = require("./HtmlTemplates");
+const moment = require("moment-timezone");
 
 const SERVICE = process.env.EMAIL_SERVICE || "";
 const USER_EMAIL = process.env.EMAIL_USER || "";
@@ -157,7 +158,8 @@ const welcomeFormat = (email, userName) => {
   return {
     from: "ascsolutions.n@gmail.com",
     to: email,
-    subject: "Welcome to Spa App – Your Journey to Relaxation Begins!",
+    subject:
+      "Welcome to The Bone Mechanics – Your Journey to Relaxation Begins!",
     html: emailTemplate.welcomeTemplate(userName),
     headers: {
       "X-Priority": "1", // Sets email priority to high
@@ -165,6 +167,65 @@ const welcomeFormat = (email, userName) => {
       "X-Mailer": "Nodemailer", // Identifies the tool used to send the email
     },
   };
+};
+
+const getDateInNewYorkTimeZoneMoment = () => {
+  const newYorkDate = moment().tz("America/New_York");
+  return newYorkDate.toDate();
+};
+
+const getTimeInNewYork = () => {
+  const timeInNewYork = moment().tz("America/New_York").format("HH:mm:ss"); // Format time as "HH:mm:ss"
+  return timeInNewYork;
+};
+
+const isPastDate = (date) => {
+  const utcDate = new Date(date);
+
+  if (isNaN(utcDate)) {
+    throw new Error("Invalid date format");
+  }
+
+  const nowInNewYork = new Date(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    })
+      .format(new Date())
+      .replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3-$1-$2")
+  );
+
+  // Normalize both dates to remove time and compare only the date
+  const utcDateOnly = new Date(
+    utcDate.getUTCFullYear(),
+    utcDate.getUTCMonth(),
+    utcDate.getUTCDate()
+  );
+
+  const newYorkDateOnly = new Date(
+    nowInNewYork.getFullYear(),
+    nowInNewYork.getMonth(),
+    nowInNewYork.getDate()
+  );
+
+  return utcDateOnly < newYorkDateOnly;
+};
+
+const generateTransactionId = () => {
+  const timestamp = Date.now().toString(36);
+  const randomBytes = crypto
+    .getRandomValues(new Uint32Array(2))
+    .map((byte) => byte.toString(36))
+    .join("");
+
+  return `${timestamp}-${randomBytes}`.toUpperCase();
+};
+
+const getZeroTimeInNewYork = () => {
+  const newYorkDate = moment().tz("America/New_York");
+  return newYorkDate.startOf("day").toISOString();
 };
 
 module.exports = {
@@ -182,4 +243,9 @@ module.exports = {
   signUpMailFormat,
   forgotMailFormat,
   welcomeFormat,
+  getDateInNewYorkTimeZoneMoment,
+  getTimeInNewYork,
+  isPastDate,
+  generateTransactionId,
+  getZeroTimeInNewYork,
 };
