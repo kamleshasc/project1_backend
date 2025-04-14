@@ -9,13 +9,15 @@ const {
 } = require("../utils/helper");
 const moment = require("moment-timezone");
 // const mongoose = require('mongoose');
-const { ObjectId } = require('mongodb');
+const { ObjectId } = require("mongodb");
 
 exports.createBooking = async (req, res, next) => {
   try {
     const {
       date,
       serviceId,
+      serviceName,
+      price,
       name,
       mail,
       phone,
@@ -101,6 +103,8 @@ exports.createBooking = async (req, res, next) => {
     const newBooking = new Booking({
       date: bookingDate,
       serviceId,
+      serviceName,
+      price,
       parentId,
       name,
       mail,
@@ -207,7 +211,7 @@ exports.getBookingByIdAndDate = async (req, res, next) => {
       };
 
       if (serviceId != "all") {
-        adminFilterQuery.serviceId = serviceId;
+        adminFilterQuery.serviceId = new ObjectId(serviceId);
       }
 
       const bookingAdmin = await Booking.find(adminFilterQuery)
@@ -267,7 +271,6 @@ exports.createUserBooking = async (req, res, next) => {
 
     const {
       date,
-      serviceId,
       name,
       mail,
       phone,
@@ -275,17 +278,22 @@ exports.createUserBooking = async (req, res, next) => {
       serviceEndTime,
       parentId,
       expertId,
+      serviceName,
+      price,
+      serviceId,
     } = req.body;
 
     if (
       !date ||
-      !serviceId ||
       !name ||
       !mail ||
       !serviceStartTime ||
       !serviceEndTime ||
       !parentId ||
-      !expertId
+      !expertId ||
+      !serviceName ||
+      !serviceId ||
+      !price
     ) {
       return next(new ApiError(400, "All fields are required."));
     }
@@ -349,6 +357,8 @@ exports.createUserBooking = async (req, res, next) => {
     const newBooking = new Booking({
       date: bookingDate,
       serviceId,
+      serviceName,
+      price,
       parentId,
       name,
       mail,
@@ -393,8 +403,8 @@ exports.getUserBookedTimeSlot = async (req, res, next) => {
       if (matchingSubService) {
         const result = await Booking.find({
           date: paramsDate,
-          serviceId,
-          expertId,
+          serviceId: new ObjectId(serviceId),
+          expertId: new ObjectId(expertId),
         }).select(
           "-id -name -mail -phone -createdAt -updatedAt -expertId -startTime -endTime -__v"
         );
@@ -446,34 +456,34 @@ exports.getUserBookedExpertStatus = async (req, res, next) => {
           expertId: new ObjectId(expertId), // Convert expertId,
         },
       },
-      {
-        // Lookup the related service from the Service collection
-        $lookup: {
-          from: "services", // Collection name
-          let: { serviceId: "$serviceId" },
-          pipeline: [
-            { $unwind: "$subService" }, // Unwind subService array
-            {
-              // Match the subService._id to the booking's serviceId
-              $match: {
-                $expr: { $eq: ["$subService._id", "$$serviceId"] },
-              },
-            },
-            {
-              // Project the required fields from the service and subService
-              $project: {
-                _id: 0,
-                serviceName: "$subService.name",
-              },
-            },
-          ],
-          as: "serviceDetails",
-        },
-      },
-      {
-        // Flatten the service details array to an object
-        $unwind: "$serviceDetails",
-      },
+      // {
+      //   // Lookup the related service from the Service collection
+      //   $lookup: {
+      //     from: "services", // Collection name
+      //     let: { serviceId: "$serviceId" },
+      //     pipeline: [
+      //       { $unwind: "$subService" }, // Unwind subService array
+      //       {
+      //         // Match the subService._id to the booking's serviceId
+      //         $match: {
+      //           $expr: { $eq: ["$subService._id", "$$serviceId"] },
+      //         },
+      //       },
+      //       {
+      //         // Project the required fields from the service and subService
+      //         $project: {
+      //           _id: 0,
+      //           serviceName: "$subService.name",
+      //         },
+      //       },
+      //     ],
+      //     as: "serviceDetails",
+      //   },
+      // },
+      // {
+      //   // Flatten the service details array to an object
+      //   $unwind: "$serviceDetails",
+      // },
       {
         // Project only the required fields for the response
         $project: {
@@ -483,11 +493,12 @@ exports.getUserBookedExpertStatus = async (req, res, next) => {
           parentId: 1,
           serviceStartTime: 1,
           serviceEndTime: 1,
-          serviceName: "$serviceDetails.serviceName",
+          serviceName: 1,
+          // serviceName: "$serviceDetails.serviceName",
         },
       },
     ]);
-    
+
     // Check if any results found and return the appropriate response
     if (result.length > 0) {
       return res.json(new ApiResponse(200, result));
@@ -518,32 +529,32 @@ exports.getMyBookings = async (req, res, next) => {
         },
       },
 
-      // Lookup details from the Services collection
-      {
-        $lookup: {
-          from: "services",
-          localField: "parentId", // Use parentId to find the service
-          foreignField: "_id",
-          as: "serviceDetails",
-        },
-      },
+      // // Lookup details from the Services collection
+      // {
+      //   $lookup: {
+      //     from: "services",
+      //     localField: "parentId", // Use parentId to find the service
+      //     foreignField: "_id",
+      //     as: "serviceDetails",
+      //   },
+      // },
 
-      // Unwind the serviceDetails array to handle it as an object
-      {
-        $unwind: "$serviceDetails",
-      },
+      // // Unwind the serviceDetails array to handle it as an object
+      // {
+      //   $unwind: "$serviceDetails",
+      // },
 
-      // Unwind the subService array inside serviceDetails to compare subService._id with serviceId
-      {
-        $unwind: "$serviceDetails.subService",
-      },
+      // // Unwind the subService array inside serviceDetails to compare subService._id with serviceId
+      // {
+      //   $unwind: "$serviceDetails.subService",
+      // },
 
-      // Match serviceId from Booking with subService._id
-      {
-        $match: {
-          $expr: { $eq: ["$serviceId", "$serviceDetails.subService._id"] }, // Compare serviceId with subService._id
-        },
-      },
+      // // Match serviceId from Booking with subService._id
+      // {
+      //   $match: {
+      //     $expr: { $eq: ["$serviceId", "$serviceDetails.subService._id"] }, // Compare serviceId with subService._id
+      //   },
+      // },
 
       // Convert expertId string to ObjectId
       {
@@ -577,7 +588,8 @@ exports.getMyBookings = async (req, res, next) => {
           date: 1,
           serviceStartTime: 1,
           serviceEndTime: 1,
-          service: "$serviceDetails.subService.name",
+          // service: "$serviceDetails.subService.name",
+          serviceName: 1,
           isDeleted: 1,
           expertName: {
             $concat: [

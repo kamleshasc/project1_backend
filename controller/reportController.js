@@ -40,6 +40,20 @@ exports.getSalesReport = async (req, res, next) => {
         },
       },
       {
+        $unwind: "$bookingIds", // Break apart each bookingId
+      },
+      {
+        $lookup: {
+          from: "bookings",
+          localField: "bookingIds",
+          foreignField: "_id",
+          as: "bookingDetails",
+        },
+      },
+      {
+        $unwind: "$bookingDetails",
+      },
+      {
         $facet: {
           overAll: [
             {
@@ -84,7 +98,9 @@ exports.getSalesReport = async (req, res, next) => {
                 monthList: {
                   $push: {
                     id: "$transactionId",
-                    service: "$customerName",
+                    // service: "$customerName",
+                    service: "$bookingDetails.serviceName",
+                    customerName: "$customerName",
                     price: "$total",
                     type: "$paymentMethod",
                   },
@@ -164,6 +180,9 @@ exports.getSalesReportPDF = async (req, res, next) => {
           ...(sc_type === "all" ? {} : { paymentMethod: sc_type }),
         },
       },
+      // {
+      //   $unwind: "$bookingIds", // To join individual bookings
+      // },
       {
         $lookup: {
           from: "bookings",
@@ -173,15 +192,15 @@ exports.getSalesReportPDF = async (req, res, next) => {
         },
       },
       { $unwind: "$bookingDetails" },
-      {
-        $lookup: {
-          from: "services",
-          localField: "bookingDetails.parentId",
-          foreignField: "_id",
-          as: "serviceDetails",
-        },
-      },
-      { $unwind: "$serviceDetails" },
+      // {
+      //   $lookup: {
+      //     from: "services",
+      //     localField: "bookingDetails.parentId",
+      //     foreignField: "_id",
+      //     as: "serviceDetails",
+      //   },
+      // },
+      // { $unwind: "$serviceDetails" },
       {
         $facet: {
           overAll: [
@@ -214,7 +233,8 @@ exports.getSalesReportPDF = async (req, res, next) => {
               $project: {
                 _id: "$bookingDetails._id",
                 date: "$paymentDate",
-                service: "$serviceDetails.serviceName",
+                service: "$bookingDetails.serviceName",
+                // service: "$serviceDetails.serviceName",
                 price: "$subTotal",
                 tax: "$tax",
                 total: "$total",
@@ -350,7 +370,7 @@ exports.getSalesReportDownloadPdf = async (req, res, next) => {
               $project: {
                 _id: "$bookingDetails._id",
                 date: "$paymentDate",
-                service: "$serviceDetails.serviceName",
+                service: "$bookingDetails.serviceName",
                 price: "$subTotal",
                 tax: "$tax",
                 total: "$total",
@@ -412,7 +432,7 @@ exports.getSalesReportDownloadPdf = async (req, res, next) => {
 
 function generateSalesReport(salesData, overallData, type, callback) {
   const tableBody = [
-    ["Date", "Service", "Price", "Tax", "Total"],
+    ["Date", "Service", "Price", "Tax", "Sub Total"],
     ...salesData.map(({ date, service, price, tax, total }) => [
       date,
       service,
@@ -480,17 +500,6 @@ function generateSalesReport(salesData, overallData, type, callback) {
   const chunks = [];
 
   pdfDoc.on("data", (chunk) => chunks.push(chunk));
-  pdfDoc.on("end", () =>
-    // res.setHeader("Content-Type", "application/pdf");
-    // res.setHeader(
-    //   "Content-Disposition",
-    //   "attachment; filename=SalesReport.pdf"
-    // );
-    // return res.send(Buffer.concat(chunks));
-    callback(Buffer.concat(chunks))
-  );
-  // pdfDoc.on("error", (err) => {
-  //   res.status(500).send({ error: "Error generating PDF" });
-  // });
+  pdfDoc.on("end", () => callback(Buffer.concat(chunks)));
   pdfDoc.end();
 }

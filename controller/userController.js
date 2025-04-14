@@ -127,26 +127,37 @@ exports.getCustomer = async (_, res, next) => {
 
 exports.createUser = async (req, res, next) => {
   try {
+    console.log(1,'===== create User =====');
+    
     const { email, otp, password } = req.body;
+    console.log(2,'===== create User =====');
     if (!email || !otp || !password) {
+      console.log(3,'===== create User =====');
       return next(new ApiError(400, "All fields are required."));
     }
-
+    console.log(4,'===== create User =====');
     const emailExists = await User.findOne({ email: req.body.email });
     if (emailExists) {
+      console.log(5,'===== create User =====');
       return next(new ApiError(400, "Email already exists."));
     }
-
+    console.log(6,'===== create User =====');
     const verifyOTP = await otpController.verifyOTP(email, otp);
+    console.log(7,'===== create User =====');
     if (!verifyOTP.success) {
+      console.log(8,'===== create User =====');
       return next(new ApiError(400, verifyOTP.message));
     }
-
+    console.log(9,'===== create User =====');
     const newUser = new User(req.body);
+    console.log(10,'===== create User =====');
     await newUser.save();
+    console.log(11,'===== create User =====');
     if (newUser) {
+      console.log(12,'===== create User =====');
       return res.json(new ApiResponse(201, newUser));
     }
+    console.log(13,'===== create User =====');
   } catch (err) {
     console.error(err);
     // return res.status(500).json({ error: "Error saving user" });
@@ -231,7 +242,6 @@ exports.uploadUserProfile = async (req, res, next) => {
         .toString("hex")}`;
       const extension = req.file.originalname.split(".").pop();
       const fileName = `${uniqueSuffix}.${extension}`;
-
       const params = {
         Bucket: process.env.AWSBUCKETNAME, // Replace with your bucket name
         Key: `images/${fileName}`, // Folder and file name in S3
@@ -239,7 +249,6 @@ exports.uploadUserProfile = async (req, res, next) => {
         ContentType: req.file.mimetype,
         // ACL: "public-read", // Adjust permissions as necessary
       };
-
       const command = new PutObjectCommand(params);
       await s3.send(command);
       let response = new ApiResponse(201, fileName);
@@ -249,7 +258,7 @@ exports.uploadUserProfile = async (req, res, next) => {
       return res.json(response);
     }
   } catch (err) {
-    console.error(err);
+    console.error(err,'sddsdsds');
     return next(new ApiError(500, err?.message || "Error uploading profile."));
   }
 };

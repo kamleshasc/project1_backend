@@ -10,7 +10,6 @@ exports.signUpOTP = async (req, res, next) => {
     if (!email) {
       return next(new ApiError(400, "Email is required."));
     }
-
     const userExist = await User.findOne({ email });
 
     if (userExist) {
@@ -18,7 +17,9 @@ exports.signUpOTP = async (req, res, next) => {
     }
 
     const otpValue = Helper.generateOTP();
-    const currentTime = Helper.getCurrentDateZone();
+    // const currentTime = Helper.getCurrentDateZone();
+    const currentTime = new Date();
+
     // const currentTime = Helper.getDateInNewYorkTimeZoneMoment();
     const expirationTimeUTC = new Date(Date.now() + 2 * 60 * 1000);
 
@@ -27,6 +28,7 @@ exports.signUpOTP = async (req, res, next) => {
     if (otpRecord) {
       // Convert UTC expirationDate from the database to the local timezone
       const expirationTimeInLocal = new Date(otpRecord.expiredDate);
+
       // Check if the OTP is still valid (convert current time to UTC for comparison)
       if (currentTime.getTime() < expirationTimeInLocal.getTime()) {
         const timeLeft =
@@ -34,7 +36,6 @@ exports.signUpOTP = async (req, res, next) => {
         let message = `Please wait for ${Math.ceil(
           timeLeft / 60
         )} minutes to request a new OTP.`;
-
         return res.json(new ApiResponse(400, {}, message));
       } else {
         // OTP has expired, update with a new OTP and expiration time in UTC
@@ -51,12 +52,9 @@ exports.signUpOTP = async (req, res, next) => {
       });
       await otpRecord.save();
     }
-
     const transporter = Helper.transporter();
     const mailOptions = Helper.signUpMailFormat(email, otpValue);
-
     await transporter.sendMail(mailOptions);
-
     return res.json(new ApiResponse(201, {}, "OTP sent successfully"));
   } catch (error) {
     return next(new ApiError(500, error?.message || "Error generating OTP."));
@@ -77,7 +75,8 @@ exports.forgotOTP = async (req, res, next) => {
     }
 
     const otpValue = Helper.generateOTP();
-    const currentTime = Helper.getDateInNewYorkTimeZoneMoment();
+    // const currentTime = Helper.getDateInNewYorkTimeZoneMoment();
+    const currentTime = new Date();
     const expirationTimeUTC = new Date(Date.now() + 2 * 60 * 1000);
 
     let otpRecord = await OTP.findOne({ email });
@@ -126,11 +125,9 @@ exports.verifyOTP = async (mail, otp) => {
     const otpRecord = await OTP.findOne({ email: mail })
       .sort({ expiredDate: -1 })
       .exec();
-
     if (!otpRecord) {
       return { success: false, message: "No OTP found for this email." };
     }
-
     // Check if the OTP has expired (2 minutes)
     const nowUTC = new Date();
     if (nowUTC > otpRecord.expiredDate) {
@@ -146,11 +143,9 @@ exports.verifyOTP = async (mail, otp) => {
     }
     otpRecord.expiredDate = null;
     await otpRecord.save({ validateBeforeSave: false });
-
     return { success: true, message: "OTP verified successfully." };
   } catch (error) {
     console.log(error, "errr");
-
     return { success: false, message: "Error verifying OTP" };
   }
 };

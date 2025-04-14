@@ -37,6 +37,8 @@ const frontEndScreens = [
   "Customers",
   "Book",
   "MyBooking",
+  "Payment",
+  "SalesReport"
 ];
 
 const frontendScreenOptions = {

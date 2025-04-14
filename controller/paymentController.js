@@ -108,7 +108,6 @@ exports.createPayment = async (req, res, next) => {
       tax,
       paymentMethod,
     } = req.body;
-
     if (
       !customerName ||
       !bookingIds ||

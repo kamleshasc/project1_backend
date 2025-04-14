@@ -5,6 +5,6 @@ const reportController = require("../../controller/reportController");
 
 router.get("/sales", verifyJWT, reportController.getSalesReport);
 router.get("/pdf/saleReport", verifyJWT, reportController.getSalesReportPDF);
-router.get("/pdf/download/saleReport", verifyJWT, reportController.getSalesReportDownloadPdf);
+router.get("/pdf/download/saleReport", reportController.getSalesReportDownloadPdf);
 
 module.exports = router;
